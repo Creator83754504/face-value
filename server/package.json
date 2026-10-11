@@ -1,0 +1,16 @@
+{
+  "name": "face-value-server",
+  "private": true,
+  "type": "module",
+  "description": "Сервер рейтинга FACE VALUE: Cloudflare Worker + D1",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "dev": "wrangler dev",
+    "db:init:local": "wrangler d1 execute face-value --local --file=schema.sql",
+    "db:init:remote": "wrangler d1 execute face-value --remote --file=schema.sql",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

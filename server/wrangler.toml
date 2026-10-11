@@ -1,0 +1,18 @@
+# FACE VALUE — настройки Cloudflare Worker.
+# Секреты (токен бота) сюда НЕ пишутся: их задают командой
+#   npx wrangler secret put BOT_TOKEN
+name = "face-value-api"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+# Адрес, с которого открывается игра (GitHub Pages и т.п.). "*" — разрешить всем (только для теста).
+ALLOWED_ORIGIN = "*"
+# Сколько секунд initData считается свежей
+INIT_DATA_MAX_AGE = "86400"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "face-value"
+# Замените на id, который выдаст команда: npx wrangler d1 create face-value
+database_id = "00000000-0000-0000-0000-000000000000"
