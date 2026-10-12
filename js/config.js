@@ -9,7 +9,7 @@
  * (в секретах Cloudflare), а этот файл видит любой игрок.
  */
 window.FV_CONFIG = {
-  API_BASE: "",
+  API_BASE: "https://aged-sky-08bdface-value-api.bagdangalimov.workers.dev",
   ROUND_SIZE: 5,
   REQUEST_TIMEOUT_MS: 10000
 };
