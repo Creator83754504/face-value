@@ -14,7 +14,7 @@ async function isSubscribed(user, env) { if (!env.BOT_TOKEN || !env.REQUIRED_CHA
 const endpoint = https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(env.REQUIRED_CHANNEL_ID)}&user_id=${encodeURIComponent(user.id)};
 let response; let data;
 try { response = await fetch(endpoint); data = await response.json(); } catch { throw new GameError( "Не удалось проверить подписку. Попробуй ещё раз.", 503, "subscription_check_unavailable" ); }
-if (!response.ok  !data.ok  !data.result) { console.error("Telegram subscription check failed:", data?.description || response.status); throw new GameError( "Не удалось проверить подписку. Попробуй позже.", 503, "subscription_check_unavailable" ); }
+if (!response.ok || !data.ok || !data.result) { console.error("Telegram subscription check failed:", data?.description || response.status); throw new GameError( "Не удалось проверить подписку. Попробуй позже.", 503, "subscription_check_unavailable" ); }
 const member = data.result;
 return ( member.status === "creator"  member.status === "administrator"  member.status === "member" || (member.status === "restricted" && member.is_member === true) ); }
 export async function handle(request, env, deps = {}) { const headers = cors(env, request);
