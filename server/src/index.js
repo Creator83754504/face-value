@@ -11,7 +11,7 @@ async function authenticate(request, env) { const header = request.headers.get("
 if (!match) { throw new AuthError("Нет данных авторизации Telegram", "no_init_data"); }
 return verifyInitData(match[1], env.BOT_TOKEN, { maxAgeSec: Number(env.INIT_DATA_MAX_AGE || 86400) }); }
 async function isSubscribed(user, env) { if (!env.BOT_TOKEN || !env.REQUIRED_CHANNEL_ID) { throw new GameError( "Проверка подписки не настроена на сервере", 503, "subscription_check_unavailable" ); }
-const endpoint = https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember + ?chat_id=${encodeURIComponent(env.REQUIRED_CHANNEL_ID)} + &user_id=${encodeURIComponent(user.id)};
+const endpoint = https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(env.REQUIRED_CHANNEL_ID)}&user_id=${encodeURIComponent(user.id)};
 let response; let data;
 try { response = await fetch(endpoint); data = await response.json(); } catch { throw new GameError( "Не удалось проверить подписку. Попробуй ещё раз.", 503, "subscription_check_unavailable" ); }
 if (!response.ok  !data.ok  !data.result) { console.error("Telegram subscription check failed:", data?.description || response.status); throw new GameError( "Не удалось проверить подписку. Попробуй позже.", 503, "subscription_check_unavailable" ); }
