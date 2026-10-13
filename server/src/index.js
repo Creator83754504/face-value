@@ -16,7 +16,7 @@ let response; let data;
 try { response = await fetch(endpoint); data = await response.json(); } catch { throw new GameError( "Не удалось проверить подписку. Попробуй ещё раз.", 503, "subscription_check_unavailable" ); }
 if (!response.ok || !data.ok || !data.result) { console.error("Telegram subscription check failed:", data?.description || response.status); throw new GameError( "Не удалось проверить подписку. Попробуй позже.", 503, "subscription_check_unavailable" ); }
 const member = data.result;
-return ( member.status === "creator"  member.status === "administrator"  member.status === "member" || (member.status === "restricted" && member.is_member === true) ); }
+return ( member.status === "creator" || member.status === "administrator" || member.status === "member" || (member.status === "restricted" && member.is_member === true) ); }
 export async function handle(request, env, deps = {}) { const headers = cors(env, request);
 if (request.method === "OPTIONS") { return new Response(null, { status: 204, headers }); }
 const url = new URL(request.url); const path = url.pathname.replace(//+$/, "");
