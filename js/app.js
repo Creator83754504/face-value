@@ -161,20 +161,19 @@
       buildProgress();
       renderQuestion();
       show("game");
-    }).catch(function (err) {
-      if (useServer && !PUBLIC_BUILD) {
-        askConfirm("Сервер недоступен", (err && err.message ? err.message + ". " : "") + "Сыграть без рейтинга?", "Играть", function (ok) {
-          if (!ok) return;
-          state.engine = ENGINE.LocalEngine({ scoring: S, questions: QUESTIONS, store: store, roundSize: ROUND_SIZE });
-          state.engine.start().then(function (r) {
-            state.questions = r.questions; state.index = 0; state.total = 0; state.results = [];
-            buildProgress(); renderQuestion(); show("game");
-          });
-        });
-      } else {
-        console.error(err);
-        askConfirm("Не удалось начать раунд", (err && err.message) || "Попробуйте ещё раз чуть позже.", "Понятно", function () {});
-      }
+     }).catch(function (err) {
+      console.error("[FACE VALUE] Не удалось начать раунд:", err);
+
+      var message = (err && err.message)
+        ? err.message
+        : "Не удалось связаться с сервером.";
+
+      askConfirm(
+        "Не удалось начать раунд",
+        message + "\n\nПроверь подключение к интернету и подписку на канал FACE VALUE. Игра без рейтинга недоступна.",
+        "Понятно",
+        function () {}
+      );
     });
   }
 
