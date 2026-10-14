@@ -454,26 +454,6 @@ function finishRound() {
   attemptFinish();
 }
 
-    renderResults(fin, rec);
-  }).catch(function (err) {
-    console.error("[FACE VALUE] Не удалось завершить раунд:", err);
-
-    state.phase = "finish-error";
-
-    askConfirm(
-      "Не удалось сохранить результат",
-      (err && err.message ? err.message : "Сервер не ответил.") +
-        "\n\nРезультат пока не подтверждён сервером. Вернись в меню и проверь соединение.",
-      "Понятно",
-      function () {
-        show("menu");
-      }
-    );
-  }).then(function () {
-    el.next.disabled = false;
-  });
-}
-
   function renderResults(fin, rec) {
     state.phase = "results";
     var max = state.questions.length * S.MAX_POINTS;
