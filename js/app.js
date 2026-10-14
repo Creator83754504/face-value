@@ -63,7 +63,9 @@
     finalScore: $("final-score"), finalMax: $("final-max"), finalRecord: $("final-record"),
     finalRank: $("final-rank"), finalGood: $("final-good"), finalAccuracy: $("final-accuracy"),
     finalBest: $("final-best"), breakdown: $("breakdown"), finalSync: $("final-sync"),
-    sheet: $("sheet"), sheetTitle: $("sheet-title"), sheetText: $("sheet-text"), sheetOk: $("sheet-ok")
+    sheet: $("sheet"), sheetTitle: $("sheet-title"), sheetText: $("sheet-text"), sheetOk: $("sheet-ok"),
+subscriptionSheet: $("subscription-sheet"),
+subscriptionText: $("subscription-text")
   };
 
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
