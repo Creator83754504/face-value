@@ -127,7 +127,7 @@ try { if (path === "/api/health" && request.method === "GET") { return json({ ok
 const user = await authenticate(request, env);
 
 if (path === "/api/subscription" && request.method === "GET") {
-  const subscribed = await isSubscribed(user, env);
+  const subscribed = await subscriptionChecker(user, env)
   return json(
     { subscribed, channelUrl: CHANNEL_URL },
     200,
@@ -145,7 +145,7 @@ const game = createGame({
 });
 
 if (path === "/api/round/start" && request.method === "POST") {
-  const subscribed = await isSubscribed(user, env);
+  const subscribed = await subscriptionChecker(user, env)
 
   if (!subscribed) {
     return json(
