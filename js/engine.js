@@ -92,17 +92,30 @@
           return res;
         });
       },
-      finish: function () {
-        if (!round) return Promise.reject(new Error("Раунд не начат"));
-        var answers = round.answers.slice();
-        var id = round.id;
-        round = null;
-        return api.finishRound(id).then(function (data) {
-          return { total: data.total, results: answers, ranked: true, server: data };
-        });
-      }
-    };
+      
+finish: function () {
+  if (!round) {
+    return Promise.reject(new Error("Раунд не начат"));
   }
+
+  if (round.answers.length !== round.questions.length) {
+    return Promise.reject(new Error("Есть неотвеченные вопросы"));
+  }
+
+  var answers = round.answers.slice();
+  var id = round.id;
+
+  return api.finishRound(id).then(function (data) {
+    round = null;
+
+    return {
+      total: data.total,
+      results: answers,
+      ranked: true,
+      server: data
+    };
+  });
+}
 
   var api = { LocalEngine: LocalEngine, RemoteEngine: RemoteEngine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
