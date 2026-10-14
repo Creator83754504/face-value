@@ -1,7 +1,7 @@
 name = "aged-sky-08bdface-value-api"
 main = "src/index.js"
 compatibility_date = "2026-10-12"
-preview_urls = true
+preview_urls = false
 
 [vars]
 ALLOWED_ORIGIN = "*"
