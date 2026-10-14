@@ -142,7 +142,15 @@ async function call(method, path, { body, auth, store, env } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (auth) headers.Authorization = "tma " + auth;
   const req = new Request("https://api.example.com" + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-  const res = await handle(req, { BOT_TOKEN: TOKEN, ALLOWED_ORIGIN: "*", ...env }, { store });
+  
+const res = await handle(
+  req,
+  { BOT_TOKEN: TOKEN, ALLOWED_ORIGIN: "*", ...env },
+  {
+    store,
+    isSubscribed: async () => true
+  }
+);
   return { status: res.status, data: res.status === 204 ? null : await res.json(), headers: res.headers };
 }
 
