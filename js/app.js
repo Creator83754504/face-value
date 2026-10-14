@@ -614,8 +614,6 @@ document.querySelectorAll("[data-subscription='close']").forEach(function (b) {
   });
 });
 
-      b.addEventListener("click", function () { closeSheet(b.getAttribute("data-sheet") === "ok"); });
-    });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !el.sheet.hidden) closeSheet(false);
     });
