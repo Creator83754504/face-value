@@ -116,6 +116,9 @@ finish: function () {
     };
   });
 }
+      }
+    };
+  }
 
   var api = { LocalEngine: LocalEngine, RemoteEngine: RemoteEngine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
