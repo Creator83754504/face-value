@@ -122,6 +122,7 @@ export async function handle(request, env, deps = {}) { const headers = cors(env
 if (request.method === "OPTIONS") { return new Response(null, { status: 204, headers }); }
 const url = new URL(request.url);
 const path = url.pathname.replace(/\/+$/, "");
+const subscriptionChecker = deps.isSubscribed || isSubscribed;
 try { if (path === "/api/health" && request.method === "GET") { return json({ ok: true, questions: QUESTIONS.length }, 200, headers); }
 const user = await authenticate(request, env);
 
