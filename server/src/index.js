@@ -4,6 +4,46 @@ FACE VALUE — сервер рейтинга.
 const scoring = scoringModule; const QUESTIONS = dataModule.QUESTIONS.filter( (q) => q.status === "verified" && q.price > 0 );
 const CHANNEL_URL = "https://t.me/facevalue_updates";
 
+function json(data, status = 200, headers = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      ...headers
+    }
+  });
+}
+
+async function readJson(request) {
+  const text = await request.text();
+
+  if (text.length > 2048) {
+    throw new GameError("Слишком большой запрос", 413, "too_large");
+  }
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new GameError("Неверный JSON", 400, "bad_json");
+  }
+}
+
+async function authenticate(request, env) {
+  const header = request.headers.get("Authorization") || "";
+  const match = header.match(/^tma (.+)$/);
+
+  if (!match) {
+    throw new AuthError(
+      "Нет данных авторизации Telegram",
+      "no_init_data"
+    );
+  }
+
+  return verifyInitData(match[1], env.BOT_TOKEN, {
+    maxAgeSec: Number(env.INIT_DATA_MAX_AGE || 86400)
+  });
+}
 function cors(env, request) {
   const allowed = env.ALLOWED_ORIGIN || "";
   const origin = request.headers.get("Origin") || "";
