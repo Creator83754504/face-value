@@ -3,20 +3,81 @@ FACE VALUE — сервер рейтинга.
 Проверка подписки обязательна для запуска нового раунда. */ import scoringModule from "../../js/scoring.js"; import dataModule from "../../js/data/questions.js"; import { verifyInitData, AuthError } from "./telegram-auth.js"; import { createGame, GameError } from "./game.js"; import { createD1Store } from "./d1-store.js";
 const scoring = scoringModule; const QUESTIONS = dataModule.QUESTIONS.filter( (q) => q.status === "verified" && q.price > 0 );
 const CHANNEL_URL = "https://t.me/facevalue_updates";
-function cors(env, request) { const allowed = env.ALLOWED_ORIGIN || ""; const origin = request.headers.get("Origin") || ""; const allowOrigin = allowed === "" ? "*" : allowed.split(",").map((s) => s.trim()).includes(origin) ? origin : "null";
-return { "Access-Control-Allow-Origin": allowOrigin, "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization", "Access-Control-Max-Age": "86400", Vary: "Origin" }; }
-function json(data, status, headers) { return new Response(JSON.stringify(data), { status: status || 200, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers } }); }
-async function readJson(request) { const text = await request.text(); if (text.length > 2048) { throw new GameError("Слишком большой запрос", 413, "too_large"); } try { return text ? JSON.parse(text) : {}; } catch { throw new GameError("Неверный JSON", 400, "bad_json"); } }
-async function authenticate(request, env) { const header = request.headers.get("Authorization") || ""; const match = header.match(/^tma (.+)$/);
-if (!match) { throw new AuthError("Нет данных авторизации Telegram", "no_init_data"); }
-return verifyInitData(match[1], env.BOT_TOKEN, { maxAgeSec: Number(env.INIT_DATA_MAX_AGE || 86400) }); }
-async function isSubscribed(user, env) { if (!env.BOT_TOKEN || !env.REQUIRED_CHANNEL_ID) { throw new GameError( "Проверка подписки не настроена на сервере", 503, "subscription_check_unavailable" ); }
-const endpoint = `https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(env.REQUIRED_CHANNEL_ID)}&user_id=${encodeURIComponent(user.id)}`;
-let response; let data;
-try { response = await fetch(endpoint); data = await response.json(); } catch { throw new GameError( "Не удалось проверить подписку. Попробуй ещё раз.", 503, "subscription_check_unavailable" ); }
-if (!response.ok || !data.ok || !data.result) { console.error("Telegram subscription check failed:", data?.description || response.status); throw new GameError( "Не удалось проверить подписку. Попробуй позже.", 503, "subscription_check_unavailable" ); }
-const member = data.result;
-return ( member.status === "creator" || member.status === "administrator" || member.status === "member" || (member.status === "restricted" && member.is_member === true) ); }
+
+function cors(env, request) {
+  const allowed = env.ALLOWED_ORIGIN || "";
+  const origin = request.headers.get("Origin") || "";
+
+  const allowOrigin =
+    allowed === ""
+      ? "*"
+      : allowed
+          .split(",")
+          .map((s) => s.trim())
+          .includes(origin)
+        ? origin
+        : "null";
+
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin"
+  };
+}
+
+async function isSubscribed(user, env) {
+  if (!env.BOT_TOKEN || !env.REQUIRED_CHANNEL_ID) {
+    throw new GameError(
+      "Проверка подписки не настроена на сервере",
+      503,
+      "subscription_check_unavailable"
+    );
+  }
+
+  const endpoint =
+    `https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember` +
+    `?chat_id=${encodeURIComponent(env.REQUIRED_CHANNEL_ID)}` +
+    `&user_id=${encodeURIComponent(user.id)}`;
+
+  let response;
+  let data;
+
+  try {
+    response = await fetch(endpoint);
+    data = await response.json();
+  } catch {
+    throw new GameError(
+      "Не удалось проверить подписку. Попробуй ещё раз.",
+      503,
+      "subscription_check_unavailable"
+    );
+  }
+
+  if (!response.ok || !data.ok || !data.result) {
+    console.error(
+      "Telegram subscription check failed:",
+      data?.description || response.status
+    );
+
+    throw new GameError(
+      "Не удалось проверить подписку. Попробуй позже.",
+      503,
+      "subscription_check_unavailable"
+    );
+  }
+
+  const member = data.result;
+
+  return (
+    member.status === "creator" ||
+    member.status === "administrator" ||
+    member.status === "member" ||
+    (member.status === "restricted" && member.is_member === true)
+  );
+}
+
 export async function handle(request, env, deps = {}) { const headers = cors(env, request);
 if (request.method === "OPTIONS") { return new Response(null, { status: 204, headers }); }
 const url = new URL(request.url); const path = url.pathname.replace(//+$/, "");
