@@ -411,22 +411,40 @@ function startRound(subscriptionVerified) {
   }
 
   // ───── Итоги ─────
-  function finishRound() {
-    state.phase = "finishing";
-    el.next.disabled = true;
-    state.engine.finish().then(function (fin) {
-      var results = fin.results;
-      // Личная статистика — всегда локально
-      var rec = store.addRound(results.map(function (r) { return { points: r.points, accuracy: r.accuracy }; }));
-      renderResults(fin, rec);
-    }).catch(function (err) {
-      // Если сервер не принял результат, всё равно показываем локальные итоги
-      var results = state.results.map(function (x) { return x.result; });
-      var total = S.roundTotal(results.map(function (r) { return r.points; }), ROUND_SIZE);
-      var rec = store.addRound(results.map(function (r) { return { points: r.points, accuracy: r.accuracy }; }));
-      renderResults({ total: total, results: results, ranked: false, error: err }, rec);
-    }).then(function () { el.next.disabled = false; });
-  }
+ 
+function finishRound() {
+  state.phase = "finishing";
+  el.next.disabled = true;
+
+  state.engine.finish().then(function (fin) {
+    var results = fin.results;
+
+    // Личная статистика сохраняется только после успешного ответа сервера.
+    var rec = store.addRound(
+      results.map(function (r) {
+        return { points: r.points, accuracy: r.accuracy };
+      })
+    );
+
+    renderResults(fin, rec);
+  }).catch(function (err) {
+    console.error("[FACE VALUE] Не удалось завершить раунд:", err);
+
+    state.phase = "finish-error";
+
+    askConfirm(
+      "Не удалось сохранить результат",
+      (err && err.message ? err.message : "Сервер не ответил.") +
+        "\n\nРезультат пока не подтверждён сервером. Вернись в меню и проверь соединение.",
+      "Понятно",
+      function () {
+        show("menu");
+      }
+    );
+  }).then(function () {
+    el.next.disabled = false;
+  });
+}
 
   function renderResults(fin, rec) {
     state.phase = "results";
@@ -574,8 +592,20 @@ $("btn-check-subscription").addEventListener("click", function () {
     document.querySelectorAll("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () { go(b.getAttribute("data-go")); });
     });
-    document.querySelectorAll("[data-action=play]").forEach(function (b) { b.addEventListener("click", startRound); });
-    document.querySelectorAll("[data-sheet]").forEach(function (b) {
+    
+    document.querySelectorAll("[data-action=play]").forEach(function (b) { b.addEventListener("click", startRound); }); 
+document.querySelectorAll("[data-sheet]").forEach(function (b) {
+  b.addEventListener("click", function () {
+    closeSheet(b.getAttribute("data-sheet") === "ok");
+  });
+});
+
+document.querySelectorAll("[data-subscription='close']").forEach(function (b) {
+  b.addEventListener("click", function () {
+    el.subscriptionSheet.hidden = true;
+  });
+});
+
       b.addEventListener("click", function () { closeSheet(b.getAttribute("data-sheet") === "ok"); });
     });
     document.addEventListener("keydown", function (e) {
