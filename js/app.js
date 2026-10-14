@@ -531,6 +531,35 @@ function startRound(subscriptionVerified) {
   // ───── Обработчики ─────
   function bind() {
     $("btn-play").addEventListener("click", startRound);
+    
+$("btn-subscribe").addEventListener("click", function () {
+  TG.openLink("https://t.me/facevalue_updates");
+});
+
+$("btn-check-subscription").addEventListener("click", function () {
+  var btn = $("btn-check-subscription");
+
+  btn.disabled = true;
+  btn.textContent = "Проверяем…";
+
+  API.subscription().then(function (data) {
+    if (data.subscribed) {
+      el.subscriptionSheet.hidden = true;
+      startRound(true);
+    } else {
+      el.subscriptionText.textContent =
+        "Подписка пока не найдена. Подпишись на канал и попробуй ещё раз.";
+    }
+  }).catch(function (err) {
+    el.subscriptionText.textContent =
+      "Не удалось проверить подписку. " +
+      (err.message || "Проверь интернет и повтори попытку.");
+  }).then(function () {
+    btn.disabled = false;
+    btn.textContent = "Проверить подписку";
+  });
+});
+
     $("btn-again").addEventListener("click", startRound);
     $("btn-quit").addEventListener("click", confirmQuit);
     $("btn-lb-retry").addEventListener("click", renderLeaderboard);
