@@ -412,19 +412,47 @@ function startRound(subscriptionVerified) {
 
   // ───── Итоги ─────
  
+
 function finishRound() {
   state.phase = "finishing";
   el.next.disabled = true;
 
-  state.engine.finish().then(function (fin) {
-    var results = fin.results;
+  function attemptFinish() {
+    state.engine.finish().then(function (fin) {
+      var rec = store.addRound(
+        fin.results.map(function (r) {
+          return { points: r.points, accuracy: r.accuracy };
+        })
+      );
 
-    // Личная статистика сохраняется только после успешного ответа сервера.
-    var rec = store.addRound(
-      results.map(function (r) {
-        return { points: r.points, accuracy: r.accuracy };
-      })
-    );
+      state.phase = "finished";
+      renderResults(fin, rec);
+    }).catch(function (err) {
+      console.error("[FACE VALUE] Не удалось завершить раунд:", err);
+
+      state.phase = "finish-error";
+
+      askConfirm(
+        "Не удалось сохранить результат",
+        (err && err.message ? err.message : "Сервер не ответил.") +
+          "\n\nРезультат пока не подтверждён. Повтори отправку, чтобы попытаться сохранить его в рейтинге.",
+        "Повторить",
+        function (retry) {
+          if (retry) {
+            state.phase = "finishing";
+            attemptFinish();
+          } else {
+            show("menu");
+          }
+        }
+      );
+    }).then(function () {
+      el.next.disabled = false;
+    });
+  }
+
+  attemptFinish();
+}
 
     renderResults(fin, rec);
   }).catch(function (err) {
