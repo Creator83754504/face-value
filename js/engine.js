@@ -115,7 +115,6 @@ finish: function () {
       server: data
     };
   });
-}
       }
     };
   }
