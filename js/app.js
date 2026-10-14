@@ -140,44 +140,72 @@ subscriptionText: $("subscription-text")
   }
 
   // ───── Старт раунда ─────
-  function startRound() {
-    if (QUESTIONS.length < ROUND_SIZE) {
-      askConfirm("Нет вопросов", "Проверьте файл js/data/questions.js", "Понятно", function () {});
-      return;
-    }
-    TG.haptic.tap();
-    var useServer = API.enabled();
-    if (PUBLIC_BUILD && !useServer) {
-      askConfirm("Откройте игру в Telegram", "В этой версии цены проверяет сервер, поэтому играть можно только внутри Telegram.", "Понятно", function () {});
-      return;
-    }
-    state.engine = useServer
-      ? ENGINE.RemoteEngine({ scoring: S, api: API, questions: QUESTIONS })
-      : ENGINE.LocalEngine({ scoring: S, questions: QUESTIONS, store: store, roundSize: ROUND_SIZE });
-
-    state.engine.start().then(function (r) {
-      state.questions = r.questions;
-      state.index = 0;
-      state.total = 0;
-      state.results = [];
-      buildProgress();
-      renderQuestion();
-      show("game");
-     }).catch(function (err) {
-      console.error("[FACE VALUE] Не удалось начать раунд:", err);
-
-      var message = (err && err.message)
-        ? err.message
-        : "Не удалось связаться с сервером.";
-
-      askConfirm(
-        "Не удалось начать раунд",
-        message + "\n\nПроверь подключение к интернету и подписку на канал FACE VALUE. Игра без рейтинга недоступна.",
-        "Понятно",
-        function () {}
-      );
-    });
+ 
+function startRound(subscriptionVerified) {
+  if (QUESTIONS.length < ROUND_SIZE) {
+    askConfirm("Нет вопросов", "Проверьте файл js/data/questions.js", "Понятно", function () {});
+    return;
   }
+
+  if (!API.enabled()) {
+    askConfirm(
+      "Открой игру в Telegram",
+      "Для игры и участия в рейтинге необходимо открыть FACE VALUE внутри Telegram.",
+      "Понятно",
+      function () {}
+    );
+    return;
+  }
+
+  if (!subscriptionVerified) {
+    API.subscription().then(function (data) {
+      if (data.subscribed) {
+        startRound(true);
+      } else {
+        el.subscriptionText.textContent =
+          "Чтобы играть и участвовать в рейтинге, подпишись на канал FACE VALUE, затем нажми «Проверить подписку».";
+        el.subscriptionSheet.hidden = false;
+      }
+    }).catch(function (err) {
+      el.subscriptionText.textContent =
+        "Не удалось проверить подписку. " +
+        (err.message || "Проверь интернет и попробуй ещё раз.");
+      el.subscriptionSheet.hidden = false;
+    });
+    return;
+  }
+
+  TG.haptic.tap();
+
+  state.engine = ENGINE.RemoteEngine({
+    scoring: S,
+    api: API,
+    questions: QUESTIONS
+  });
+
+  state.engine.start().then(function (r) {
+    state.questions = r.questions;
+    state.index = 0;
+    state.total = 0;
+    state.results = [];
+    buildProgress();
+    renderQuestion();
+    show("game");
+  }).catch(function (err) {
+    console.error("[FACE VALUE] Не удалось начать раунд:", err);
+
+    var message = err && err.message
+      ? err.message
+      : "Не удалось связаться с сервером.";
+
+    askConfirm(
+      "Не удалось начать раунд",
+      message + "\n\nПроверь интернет и подписку на канал FACE VALUE.",
+      "Понятно",
+      function () {}
+    );
+  });
+}
 
   function buildProgress() {
     el.progress.innerHTML = "";
