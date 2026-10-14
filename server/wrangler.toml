@@ -1,13 +1,13 @@
-name = “aged-sky-08bdface-value-api”
-main = “src/index.js”
-compatibility_date = “2025-09-01”
+name = "aged-sky-08bdface-value-api"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
 
 [vars]
-ALLOWED_ORIGIN = “*”
-INIT_DATA_MAX_AGE = “86400”
-REQUIRED_CHANNEL_ID = “@facevalue_updates”
+ALLOWED_ORIGIN = "*"
+INIT_DATA_MAX_AGE = "86400"
+REQUIRED_CHANNEL_ID = "@facevalue_updates"
 
 [[d1_databases]]
-binding = “DB”
-database_name = “face-value-db”
-database_id = “7a45a83a-587c-42d0-a879-4275322aed4d”
+binding = "DB"
+database_name = "face-value-db"
+database_id = "7a45a83a-587c-42d0-a879-4275322aed4d"
