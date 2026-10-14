@@ -49,7 +49,7 @@ function cors(env, request) {
   const origin = request.headers.get("Origin") || "";
 
   const allowOrigin =
-    allowed === ""
+    (allowed.trim() === "" || allowed.trim() === "*")
       ? "*"
       : allowed
           .split(",")
