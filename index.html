@@ -251,6 +251,26 @@
       <button class="btn btn--secondary" type="button" data-sheet="cancel">Отмена</button>
     </div>
   </div>
+    <!-- Проверка подписки FACE VALUE -->
+  <div class="sheet" id="subscription-sheet" hidden>
+    <div class="sheet__backdrop" data-subscription="close"></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true"
+         aria-labelledby="subscription-title">
+      <h3 id="subscription-title">Подписка на канал</h3>
+      <p id="subscription-text">
+        Чтобы играть и участвовать в рейтинге, подпишись на канал FACE VALUE.
+      </p>
+      <button class="btn btn--primary" id="btn-subscribe" type="button">
+        Подписаться
+      </button>
+      <button class="btn btn--secondary" id="btn-check-subscription" type="button">
+        Проверить подписку
+      </button>
+      <button class="btn btn--secondary" type="button" data-subscription="close">
+        Назад
+      </button>
+    </div>
+  </div>
 
   <noscript><p style="color:#fff;padding:24px">Для игры нужно включить JavaScript.</p></noscript>
 
