@@ -106,13 +106,18 @@ test("раунд: чужой раунд недоступен, завершить
   await assert.rejects(game.answer(U1, { roundId: "not-a-uuid", index: 0, guess: 50 }), { code: "bad_round" });
 });
 
-test("раунд: просроченный раунд не принимает ответы", async () => {
-  const { game, clock } = makeGame();
+test("раунд: просроченный раунд не принимает ответы и получает статус expired", async () => {
+  const { game, store, clock } = makeGame();
   const r = await game.startRound(U1);
   clock.advance(ROUND_TTL_MS + 1);
-  await assert.rejects(game.answer(U1, { roundId: r.roundId, index: 0, guess: 100 }), { code: "round_expired" });
-});
 
+  await assert.rejects(
+    game.answer(U1, { roundId: r.roundId, index: 0, guess: 100 }),
+    { code: "round_expired" }
+  );
+
+  assert.equal(store.rounds.get(r.roundId).status, "expired");
+});
 test("раунд: ограничение числа раундов в час", async () => {
   const { game } = makeGame();
   for (let i = 0; i < MAX_ROUNDS_PER_HOUR; i++) await game.startRound(U1);
