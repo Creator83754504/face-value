@@ -44,20 +44,19 @@ export function createD1Store(db) {
       return (res.meta?.changes || 0) === 1;
     },
 
-    async finishRound(id, total, at) {
-      const res = await db.prepare("UPDATE rounds SET status = 'finished', total = ?, finished_at = ? WHERE id = ? AND status = 'active'")
-        .bind(total, at, id).run();
+       async finishRound(id, total, at) {
+      const res = await db.prepare(
+        "UPDATE rounds SET status = 'finished', total = ?, finished_at = ? WHERE id = ? AND status = 'active'"
+      ).bind(total, at, id).run();
       return (res.meta?.changes || 0) === 1;
     },
 
-async expireRound(id, at) {
-  const res = await db.prepare(
-    "UPDATE rounds SET status = 'expired', finished_at = ? WHERE id = ? AND status = 'active'"
-  ).bind(at, id).run();
-  return (res.meta?.changes || 0) === 1;
-},
-
-async recordResult({ userId, name, total, at }) {
+    async expireRound(id, at) {
+      const res = await db.prepare(
+        "UPDATE rounds SET status = 'expired', finished_at = ? WHERE id = ? AND status = 'active'"
+      ).bind(at, id).run();
+      return (res.meta?.changes || 0) === 1;
+    },
 
     async recordResult({ userId, name, total, at }) {
       const before = await db.prepare("SELECT best FROM players WHERE user_id = ?").bind(userId).first();
