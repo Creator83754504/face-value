@@ -49,12 +49,6 @@ export function createD1Store(db) {
         .bind(total, at, id).run();
       return (res.meta?.changes || 0) === 1;
     },
-    
-    async finishRound(id, total, at) {
-  const res = await db.prepare("UPDATE rounds SET status = 'finished', total = ?, finished_at = ? WHERE id = ? AND status = 'active'")
-    .bind(total, at, id).run();
-  return (res.meta?.changes || 0) === 1;
-},
 
 async expireRound(id, at) {
   const res = await db.prepare(
