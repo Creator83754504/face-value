@@ -51,7 +51,10 @@ export function createGame({ store, scoring, questions, now = () => Date.now(), 
     async answer(user, { roundId, index, guess }) {
       const round = await loadOwnRound(user, roundId);
       if (round.status !== "active") throw new GameError("Раунд уже завершён", 409, "round_finished");
-      if (now() - round.createdAt > ROUND_TTL_MS) throw new GameError("Время раунда истекло", 410, "round_expired");
+      if (now() - round.createdAt > ROUND_TTL_MS) {
+  await store.expireRound(round.id, now());
+  throw new GameError("Время раунда истекло", 410, "round_expired");
+}
       if (!Number.isInteger(index) || index !== round.answersCount || index >= round.questionIds.length) {
         throw new GameError("Неверный номер вопроса", 409, "bad_index");
       }
