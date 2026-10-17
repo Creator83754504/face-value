@@ -1,40 +1,8 @@
-/*
- * FACE VALUE — база вопросов (сгенерирована из проверенных данных).
- *
- * Первые 100 товаров — официальные цены в США (USD) на сайтах производителей или их
- * официальных магазинов, проверены 11.10.2026. Товары со скидкой в базу не попадали.
- *
- * Поля вопроса:
- *   id, category, brand, model, title, subtitle — что за товар
- *   price, currency, region                   — цена, валюта (USD), регион (US)
- *   note                                      — пояснение к цене (показывается после ответа)
- *   source { label, url }, checkedAt          — откуда цена и когда проверена
- *   status                                    — "verified" или "test"
- *   rarity                                    — COMMON | RARE | EPIC | LEGENDARY (задаётся вручную;
- *                                               шансы выпадения — в js/rarity-config.js)
- *   image { remote, pageUrl, credit }         — официальное фото товара (ссылка)
- *     Локальные копии фото скачиваются командой `node tools/download-images.mjs`
- *     в папку assets/products/ и подключаются автоматически через manifest.js.
- *
- * Новые объекты (добавлены 16.10.2026: машины, транспорт, недвижимость, часы и драгоценности,
- * искусство, коллекционные предметы, профессиональная техника) имеют дополнительные поля:
- *   priceType   — что это за цена: new_msrp (новый, цена производителя), used_market (рыночная цена),
- *                 auction (аукцион, с комиссией если указано), private_sale (частная сделка),
- *                 unit_cost (цена единицы), construction_cost (стоимость постройки) и т.п.
- *   priceDate   — когда была эта цена/сделка (цена номинальная, без пересчёта на инфляцию)
- *   rarityReason — почему выбрана такая редкость
- *   image.match — "exact" (тот самый объект) или "same-model" (та же модель, другой экземпляр);
- *   image.license — "free" | "unknown" (лицензия не проверена) | "non-free"
- *   status "needs-image" — цена проверена, но подходящего фото ещё нет: в игре НЕ участвует
- *                 (клиент и сервер берут только status "verified"). image у таких объектов = null.
- *   nameRu, aliases — другие названия (для проверки дублей)
- *   region "WORLD" — цена не привязана к рынку США (аукцион, сделка, постройка).
- *
- * PENDING — товары с проверенной ценой, для которых не нашлось подходящего фото.
- * В игре они НЕ участвуют, пока не будет добавлено фото.
- */
+/* FACE VALUE — публичная сборка: цены и пояснения хранятся только на сервере. */
 (function (root) {
-  var CATEGORIES = {
+  root.FV_DATA = {
+  "PUBLIC_BUILD": true,
+  "CATEGORIES": {
     "tech": "Смартфоны и электроника",
     "fashion": "Одежда и обувь",
     "accessories": "Брендовые аксессуары",
@@ -50,11 +18,12 @@
     "art": "Искусство",
     "collectibles": "Коллекционные предметы",
     "protech": "Профессиональная техника"
-  };
-
-  var REGIONS = { US: "США", WORLD: "Мир" };
-
-  var QUESTIONS = [
+  },
+  "REGIONS": {
+    "US": "США",
+    "WORLD": "Мир"
+  },
+  "QUESTIONS": [
     {
       "id": "iphone-18-pro",
       "category": "tech",
@@ -62,10 +31,8 @@
       "model": "iPhone 18 Pro",
       "title": "Apple iPhone 18 Pro",
       "subtitle": "256 ГБ, без привязки к оператору",
-      "price": 1199,
       "currency": "USD",
       "region": "US",
-      "note": "Цена версии без привязки к оператору",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-iphone/iphone-18-pro"
@@ -86,10 +53,8 @@
       "model": "iPhone Air",
       "title": "Apple iPhone Air",
       "subtitle": "256 ГБ, без привязки к оператору",
-      "price": 1099,
       "currency": "USD",
       "region": "US",
-      "note": "Цена версии без привязки к оператору",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-iphone/iphone-air"
@@ -110,10 +75,8 @@
       "model": "iPhone 17e",
       "title": "Apple iPhone 17e",
       "subtitle": "256 ГБ, без привязки к оператору",
-      "price": 699,
       "currency": "USD",
       "region": "US",
-      "note": "Самый доступный iPhone в линейке Apple на дату проверки",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-iphone/iphone-17e"
@@ -134,10 +97,8 @@
       "model": "iPhone Duo",
       "title": "Apple iPhone Duo",
       "subtitle": "Складной iPhone, 256 ГБ",
-      "price": 1999,
       "currency": "USD",
       "region": "US",
-      "note": "Цена объявлена Apple до старта продаж (предзаказ с 16.10.2026)",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-iphone/iphone-duo"
@@ -158,10 +119,8 @@
       "model": "AirPods Pro 3",
       "title": "Apple AirPods Pro 3",
       "subtitle": "Наушники с шумоподавлением",
-      "price": 249,
       "currency": "USD",
       "region": "US",
-      "note": "",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-airpods/airpods-pro-3"
@@ -182,10 +141,8 @@
       "model": "AirPods 4",
       "title": "Apple AirPods 4",
       "subtitle": "Базовая версия без шумоподавления",
-      "price": 129,
       "currency": "USD",
       "region": "US",
-      "note": "Версия с шумоподавлением стоит $179",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-airpods/airpods-4"
@@ -206,10 +163,8 @@
       "model": "AirTag",
       "title": "Apple AirTag",
       "subtitle": "1 штука",
-      "price": 29,
       "currency": "USD",
       "region": "US",
-      "note": "Набор из 4 штук стоит $99",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-airtag/airtag"
@@ -230,10 +185,8 @@
       "model": "Apple Watch Series 12",
       "title": "Apple Watch Series 12",
       "subtitle": "Корпус 42 мм, базовая версия",
-      "price": 399,
       "currency": "USD",
       "region": "US",
-      "note": "",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-watch/apple-watch"
@@ -254,10 +207,8 @@
       "model": "Apple Watch Ultra 4",
       "title": "Apple Watch Ultra 4",
       "subtitle": "Базовая версия",
-      "price": 799,
       "currency": "USD",
       "region": "US",
-      "note": "",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-watch/apple-watch-ultra"
@@ -278,10 +229,8 @@
       "model": "Apple Pencil Pro",
       "title": "Apple Pencil Pro",
       "subtitle": "Стилус для iPad",
-      "price": 129,
       "currency": "USD",
       "region": "US",
-      "note": "",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/product/MX2D3AM/A/apple-pencil-pro"
@@ -302,10 +251,8 @@
       "model": "iPad (A16)",
       "title": "Apple iPad (A16)",
       "subtitle": "11 дюймов, 128 ГБ, Wi‑Fi",
-      "price": 449,
       "currency": "USD",
       "region": "US",
-      "note": "",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-ipad/ipad"
@@ -326,10 +273,8 @@
       "model": "Beats Studio Pro",
       "title": "Beats Studio Pro",
       "subtitle": "Беспроводные наушники, чёрные",
-      "price": 299.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в магазине Apple",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/product/MQTP3LL/A/beats-studio-pro-wireless-headphones-black"
@@ -350,10 +295,8 @@
       "model": "Icons 10316 Rivendell",
       "title": "LEGO Icons 10316 Rivendell",
       "subtitle": "The Lord of the Rings, 6 167 деталей",
-      "price": 499.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/the-lord-of-the-rings-rivendell-10316"
@@ -374,10 +317,8 @@
       "model": "Icons 10281 Bonsai Tree",
       "title": "LEGO Icons 10281 Bonsai Tree",
       "subtitle": "878 деталей",
-      "price": 49.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/bonsai-tree-10281"
@@ -398,10 +339,8 @@
       "model": "Icons 10295 Porsche 911",
       "title": "LEGO Icons 10295 Porsche 911",
       "subtitle": "1 458 деталей",
-      "price": 169.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/porsche-911-10295"
@@ -422,10 +361,8 @@
       "model": "Icons 10356 U.S.S. Enterprise NCC-1701-D",
       "title": "LEGO Icons 10356 U.S.S. Enterprise NCC-1701-D",
       "subtitle": "Star Trek, 3 600 деталей",
-      "price": 399.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/star-trek-u-s-s-enterprise-ncc-1701-d-10356"
@@ -446,10 +383,8 @@
       "model": "Icons 10311 Orchid",
       "title": "LEGO Icons 10311 Orchid",
       "subtitle": "608 деталей",
-      "price": 49.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/orchid-10311"
@@ -470,10 +405,8 @@
       "model": "Star Wars 75192 Millennium Falcon",
       "title": "LEGO Star Wars 75192 Millennium Falcon",
       "subtitle": "7 541 деталь",
-      "price": 849.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/millennium-falcon-75192"
@@ -494,10 +427,8 @@
       "model": "Icons 10307 Eiffel Tower",
       "title": "LEGO Icons 10307 Eiffel Tower",
       "subtitle": "10 001 деталь, высота 149 см",
-      "price": 629.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/eiffel-tower-10307"
@@ -518,10 +449,8 @@
       "model": "Icons 10294 Titanic",
       "title": "LEGO Icons 10294 Titanic",
       "subtitle": "9 090 деталей",
-      "price": 679.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/titanic-10294"
@@ -542,10 +471,8 @@
       "model": "Dunk Low Retro",
       "title": "Nike Dunk Low Retro",
       "subtitle": "Мужские, Shadow Brown, IM4415-201",
-      "price": 120,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "nike.com",
         "url": "https://www.nike.com/t/dunk-low-retro-mens-shoes-5FQWGR"
@@ -566,10 +493,8 @@
       "model": "Air Jordan 1 Retro High OG",
       "title": "Jordan Air Jordan 1 Retro High OG",
       "subtitle": "«Love Letter», DZ5485-201",
-      "price": 185,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "nike.com",
         "url": "https://www.nike.com/t/air-jordan-1-retro-high-og-love-letter-mens-shoes-KVpEM9a8/DZ5485-201"
@@ -590,10 +515,8 @@
       "model": "Gazelle",
       "title": "adidas Gazelle",
       "subtitle": "Core Black, CQ2809",
-      "price": 110,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "adidas.com",
         "url": "https://www.adidas.com/us/gazelle-shoes/CQ2809.html"
@@ -614,10 +537,8 @@
       "model": "Samba OG",
       "title": "adidas Samba OG",
       "subtitle": "Cloud White / Core Black / Gum, B75806",
-      "price": 100,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "adidas.com",
         "url": "https://www.adidas.com/us/samba-og-shoes/B75806.html"
@@ -638,10 +559,8 @@
       "model": "Classic Clog",
       "title": "Crocs Classic Clog",
       "subtitle": "Цвет Slate Grey",
-      "price": 49.99,
       "currency": "USD",
       "region": "US",
-      "note": "Полная цена без скидки; отдельные цвета иногда продаются со скидкой",
       "source": {
         "label": "crocs.com",
         "url": "https://www.crocs.com/p/classic-clog/10001.html"
@@ -662,10 +581,8 @@
       "model": "Classic Mini",
       "title": "UGG Classic Mini",
       "subtitle": "Мужские, цвет Chestnut",
-      "price": 175,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "ugg.com",
         "url": "https://www.ugg.com/men-boots-classic-boots/classic-mini/1002072.html"
@@ -686,10 +603,8 @@
       "model": "Arizona",
       "title": "Birkenstock Arizona",
       "subtitle": "Замша, цвет Taupe",
-      "price": 139.95,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "birkenstock.com",
         "url": "https://www.birkenstock.com/us/arizona-suede-leather-taupe/arizona-core-suedeleather-0-eva-u_46.html"
@@ -710,10 +625,8 @@
       "model": "Cloud 6",
       "title": "On Cloud 6",
       "subtitle": "Мужские, Black | Black",
-      "price": 160,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "on.com",
         "url": "https://www.on.com/en-us/products/cloud-6-m-3mf1007/mens/black-black-shoes-3MF10071043"
@@ -734,10 +647,8 @@
       "model": "Chuck 70 Canvas High Top",
       "title": "Converse Chuck 70 Canvas High Top",
       "subtitle": "Black/Black/Egret",
-      "price": 95,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "converse.com",
         "url": "https://www.converse.com/shop/p/chuck-70-canvas-unisex-high-top-shoe/162056MP.html"
@@ -758,10 +669,8 @@
       "model": "Premium Old Skool GORE-TEX",
       "title": "Vans Premium Old Skool GORE-TEX",
       "subtitle": "Чёрные, VN000Z3DBLA",
-      "price": 130,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "vans.com",
         "url": "https://www.vans.com/en-us/p/shoes/icons/old-skool-5205/premium-old-skool-gore-tex-shoe-VN000Z3DBLA"
@@ -782,10 +691,8 @@
       "model": "Better Sweater Fleece Jacket",
       "title": "Patagonia Better Sweater Fleece Jacket",
       "subtitle": "Мужская, Old Growth Green, 25528",
-      "price": 169,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "patagonia.com",
         "url": "https://patagonia.com/product/mens-better-sweater-fleece-jacket/191743873539.html"
@@ -806,10 +713,8 @@
       "model": "Beta Jacket",
       "title": "Arc'teryx Beta Jacket",
       "subtitle": "Мужская мембранная куртка, Black Sapphire",
-      "price": 400,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "arcteryx.com",
         "url": "https://arcteryx.com/us/en/shop/mens/beta-jacket-0868"
@@ -830,10 +735,8 @@
       "model": "Custom Slim Fit Mesh Polo",
       "title": "Polo Ralph Lauren Custom Slim Fit Mesh Polo",
       "subtitle": "Мужское поло, Canary Yellow Multi",
-      "price": 148,
       "currency": "USD",
       "region": "US",
-      "note": "Официальная розничная цена в США",
       "source": {
         "label": "ralphlauren.com",
         "url": "https://www.ralphlauren.com/men-clothing-polo-shirts/custom-slim-fit-mesh-polo/0041899386.html"
@@ -854,10 +757,8 @@
       "model": "Submariner Date 126610LN",
       "title": "Rolex Submariner Date 126610LN",
       "subtitle": "41 мм, сталь Oystersteel",
-      "price": 11350,
       "currency": "USD",
       "region": "US",
-      "note": "Рекомендованная розничная цена Rolex в США",
       "source": {
         "label": "rolex.com",
         "url": "https://www.rolex.com/en-us/watches/submariner/m126610ln-0001"
@@ -878,10 +779,8 @@
       "model": "Submariner Date 126618LN",
       "title": "Rolex Submariner Date 126618LN",
       "subtitle": "41 мм, жёлтое золото 18 карат",
-      "price": 50900,
       "currency": "USD",
       "region": "US",
-      "note": "Та же модель Submariner Date, но корпус и браслет из жёлтого золота 18 карат",
       "source": {
         "label": "rolex.com",
         "url": "https://www.rolex.com/en-us/watches/submariner/m126618ln-0002"
@@ -902,10 +801,8 @@
       "model": "Speedmaster Moonwatch Professional",
       "title": "Omega Speedmaster Moonwatch Professional",
       "subtitle": "42 мм, сталь на браслете, 310.30.42.50.01.002",
-      "price": 9000,
       "currency": "USD",
       "region": "US",
-      "note": "Рекомендованная розничная цена Omega в США",
       "source": {
         "label": "omegawatches.com",
         "url": "https://www.omegawatches.com/en-us/watch-omega-speedmaster-moonwatch-professional-co-axial-master-chronometer-chronograph-42-mm-31030425001002"
@@ -926,10 +823,8 @@
       "model": "PRX Powermatic 80, 40 мм",
       "title": "Tissot PRX Powermatic 80, 40 мм",
       "subtitle": "Синий циферблат, T137.407.11.041.00",
-      "price": 850,
       "currency": "USD",
       "region": "US",
-      "note": "Рекомендованная цена Tissot в США",
       "source": {
         "label": "tissotwatches.com",
         "url": "https://www.tissotwatches.com/en-us/T1374071104100.html"
@@ -950,10 +845,8 @@
       "model": "Meisterstück 149",
       "title": "Montblanc Meisterstück 149",
       "subtitle": "Перьевая ручка, позолота, перо M",
-      "price": 1380,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Montblanc (США)",
       "source": {
         "label": "montblanc.com",
         "url": "https://www.montblanc.com/en-us/meisterstuck-gold-coated-149-fountain-pen-(m)-MB132113.html"
@@ -974,10 +867,8 @@
       "model": "Return to Tiffany Heart Tag Pendant",
       "title": "Tiffany & Co. Return to Tiffany Heart Tag Pendant",
       "subtitle": "Серебро, размер Medium",
-      "price": 350,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Tiffany (США)",
       "source": {
         "label": "tiffany.com",
         "url": "https://www.tiffany.com/jewelry/necklaces-pendants/return-to-tiffany-sterling-silver-necklaces-pendants-1154167408.html"
@@ -998,10 +889,8 @@
       "model": "5 Sports SRPD55",
       "title": "Seiko 5 Sports SRPD55",
       "subtitle": "Автоматические часы",
-      "price": 350,
       "currency": "USD",
       "region": "US",
-      "note": "Рекомендованная цена Seiko в США",
       "source": {
         "label": "seikowatches.com",
         "url": "https://www.seikowatches.com/us-en/products/5sports/srpd55"
@@ -1022,10 +911,8 @@
       "model": "Sauvage Eau de Toilette",
       "title": "Dior Sauvage Eau de Toilette",
       "subtitle": "Мужской аромат, 30 мл (1 fl oz)",
-      "price": 75,
       "currency": "USD",
       "region": "US",
-      "note": "Цена самого маленького флакона в официальном магазине Dior (США)",
       "source": {
         "label": "dior.com",
         "url": "https://www.dior.com/en_us/beauty/products/sauvage-eau-de-toilette-Y0685240.html"
@@ -1046,10 +933,8 @@
       "model": "Crème de la Mer",
       "title": "La Mer Crème de la Mer",
       "subtitle": "Увлажняющий крем, 30 мл (1 oz)",
-      "price": 200,
       "currency": "USD",
       "region": "US",
-      "note": "Банка 8,4 oz того же крема стоит $1540",
       "source": {
         "label": "cremedelamer.com",
         "url": "https://www.cremedelamer.com/product/5834/12343/face/moisturizers/creme-de-la-mer"
@@ -1070,10 +955,8 @@
       "model": "Brazilian Bum Bum Cream",
       "title": "Sol de Janeiro Brazilian Bum Bum Cream",
       "subtitle": "Крем для тела, 240 мл",
-      "price": 48,
       "currency": "USD",
       "region": "US",
-      "note": "Цена без подписки в официальном магазине бренда (США)",
       "source": {
         "label": "soldejaneiro.com",
         "url": "https://soldejaneiro.com/products/brazilian-bum-bum-cream"
@@ -1094,10 +977,8 @@
       "model": "Ultra Facial Cream",
       "title": "Kiehl's Ultra Facial Cream",
       "subtitle": "Увлажняющий крем, 250 мл",
-      "price": 115,
       "currency": "USD",
       "region": "US",
-      "note": "Маленькая баночка 28 мл того же крема стоит больше чем в 4 раза дешевле",
       "source": {
         "label": "kiehls.com",
         "url": "https://www.kiehls.com/skincare/face-moisturizers/ultra-facial-cream-with-squalane/622.html"
@@ -1118,10 +999,8 @@
       "model": "Matte Revolution Lipstick",
       "title": "Charlotte Tilbury Matte Revolution Lipstick",
       "subtitle": "Оттенок Pillow Talk Medium",
-      "price": 37,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине бренда (США)",
       "source": {
         "label": "charlottetilbury.com",
         "url": "https://www.charlottetilbury.com/us/product/matte-revolution-lipstick-pillow-talk-medium"
@@ -1142,10 +1021,8 @@
       "model": "Advanced Night Repair Serum",
       "title": "Estée Lauder Advanced Night Repair Serum",
       "subtitle": "Сыворотка, 50 мл (1.7 oz)",
-      "price": 135,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Estée Lauder (США)",
       "source": {
         "label": "esteelauder.com",
         "url": "https://www.esteelauder.com/product/689/77491/product-catalog/skincare/repair-serum/advanced-night-repair-serum/synchronized-multi-recovery-complex"
@@ -1166,10 +1043,8 @@
       "model": "Moisture Surge 100H",
       "title": "Clinique Moisture Surge 100H",
       "subtitle": "Гель-крем, 30 мл (1 oz)",
-      "price": 31,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Clinique (США)",
       "source": {
         "label": "clinique.com",
         "url": "https://www.clinique.com/products/moisture-surge-100h-auto-replenishing-hydrator"
@@ -1190,10 +1065,8 @@
       "model": "Gloss Bomb Universal Lip Luminizer",
       "title": "Fenty Beauty Gloss Bomb Universal Lip Luminizer",
       "subtitle": "Оттенок Fenty Glow, 9 мл",
-      "price": 23,
       "currency": "USD",
       "region": "US",
-      "note": "Есть мини-версия 5,5 мл — она дешевле примерно на треть",
       "source": {
         "label": "fentybeauty.com",
         "url": "https://fentybeauty.com/products/gloss-bomb-universal-lip-luminizer-fenty-glow"
@@ -1214,10 +1087,8 @@
       "model": "Lip Butter Balm",
       "title": "Summer Fridays Lip Butter Balm",
       "subtitle": "Вкус Vanilla, 15 г",
-      "price": 24,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине бренда (США)",
       "source": {
         "label": "summerfridays.com",
         "url": "https://summerfridays.com/products/lip-butter-balm"
@@ -1238,10 +1109,8 @@
       "model": "V15 Detect",
       "title": "Dyson V15 Detect",
       "subtitle": "Беспроводной пылесос, Yellow/Iron",
-      "price": 849.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Dyson (США)",
       "source": {
         "label": "dyson.com",
         "url": "https://www.dyson.com/vacuum-cleaners/cordless/v15/detect-yellow"
@@ -1262,10 +1131,8 @@
       "model": "Mini Electric Kettle KLF05",
       "title": "Smeg Mini Electric Kettle KLF05",
       "subtitle": "Мини-чайник 0,8 л, белый",
-      "price": 200,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Smeg (США)",
       "source": {
         "label": "smeg.com",
         "url": "https://www.smeg.com/us/products/KLF05WHUS"
@@ -1286,10 +1153,8 @@
       "model": "PlayStation 5 Pro",
       "title": "Sony PlayStation 5 Pro",
       "subtitle": "Игровая консоль, 2 ТБ",
-      "price": 899,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/buy-consoles/playstation5-pro-console-2-tb"
@@ -1310,10 +1175,8 @@
       "model": "PlayStation 5 Digital Edition",
       "title": "Sony PlayStation 5 Digital Edition",
       "subtitle": "Игровая консоль без дисковода, 825 ГБ",
-      "price": 599,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/buy-consoles/playstation5-digital-edition-console-825-gb"
@@ -1334,10 +1197,8 @@
       "model": "DualSense Wireless Controller",
       "title": "Sony DualSense Wireless Controller",
       "subtitle": "Геймпад PS5, Midnight Black",
-      "price": 74,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1358,10 +1219,8 @@
       "model": "PlayStation Portal",
       "title": "Sony PlayStation Portal",
       "subtitle": "Устройство для удалённой игры с PS5",
-      "price": 249,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1382,10 +1241,8 @@
       "model": "PULSE Elite",
       "title": "Sony PULSE Elite",
       "subtitle": "Беспроводная гарнитура для PS5",
-      "price": 149,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1406,10 +1263,8 @@
       "model": "G923 TRUEFORCE",
       "title": "Logitech G923 TRUEFORCE",
       "subtitle": "Игровой руль с педалями для PS5",
-      "price": 349.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1430,10 +1285,8 @@
       "model": "Optimus GX PRO 850P 8 ТБ",
       "title": "SanDisk Optimus GX PRO 850P 8 ТБ",
       "subtitle": "SSD-накопитель для PS5",
-      "price": 2249.99,
       "currency": "USD",
       "region": "US",
-      "note": "Да, это просто SSD-диск для приставки",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1454,10 +1307,8 @@
       "model": "LEGO PlayStation",
       "title": "LEGO PlayStation",
       "subtitle": "Конструктор в виде первой PlayStation",
-      "price": 179.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1478,10 +1329,8 @@
       "model": "PULSE Elevate",
       "title": "Sony PULSE Elevate",
       "subtitle": "Беспроводные колонки, белые",
-      "price": 219,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1502,10 +1351,8 @@
       "model": "Maxwell 2",
       "title": "Audeze Maxwell 2",
       "subtitle": "Игровая гарнитура для PlayStation",
-      "price": 329,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1526,10 +1373,8 @@
       "model": "INZONE M10S",
       "title": "Sony INZONE M10S",
       "subtitle": "Игровой OLED-монитор 27\", 480 Гц",
-      "price": 899.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -1550,10 +1395,8 @@
       "model": "CREAMi NC301",
       "title": "Ninja CREAMi NC301",
       "subtitle": "Мороженица 7-в-1, Cloud Silver",
-      "price": 229.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине SharkNinja (США)",
       "source": {
         "label": "sharkninja.com",
         "url": "https://www.sharkninja.com/ninja-creami-7-in-1-ice-cream-maker/NC301.html"
@@ -1574,10 +1417,8 @@
       "model": "Spirit E-325",
       "title": "Weber Spirit E-325",
       "subtitle": "Газовый гриль (пропан), чёрный",
-      "price": 549,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Weber (США)",
       "source": {
         "label": "amer.weber.com",
         "url": "https://amer.weber.com/en-us/products/spirit-e-325-gas-grill-liquid-propane-black-1500789"
@@ -1598,10 +1439,8 @@
       "model": "Favorites Variety Pack",
       "title": "OLIPOP Favorites Variety Pack",
       "subtitle": "Пребиотическая газировка, 12 банок",
-      "price": 35.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена разовой покупки в официальном магазине бренда (США), без подписки",
       "source": {
         "label": "drinkolipop.com",
         "url": "https://drinkolipop.com/products/favorites-variety-pack"
@@ -1622,10 +1461,8 @@
       "model": "\"Sizzle\" Extra Virgin Olive Oil",
       "title": "Graza \"Sizzle\" Extra Virgin Olive Oil",
       "subtitle": "Оливковое масло, 750 мл",
-      "price": 16,
       "currency": "USD",
       "region": "US",
-      "note": "Цена разовой покупки в официальном магазине бренда (США), без подписки",
       "source": {
         "label": "graza.co",
         "url": "https://www.graza.co/products/sizzle"
@@ -1646,10 +1483,8 @@
       "model": "Gold Label Smoked Salmon",
       "title": "Fishwife Gold Label Smoked Salmon",
       "subtitle": "Копчёный лосось, 3 банки",
-      "price": 36,
       "currency": "USD",
       "region": "US",
-      "note": "Получается $12 за одну банку рыбы",
       "source": {
         "label": "eatfishwife.com",
         "url": "https://eatfishwife.com/products/smoked-atlantic-salmon"
@@ -1670,10 +1505,8 @@
       "model": "Dark Roast",
       "title": "Death Wish Coffee Dark Roast",
       "subtitle": "Молотый кофе, 453 г (16 oz)",
-      "price": 19.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена разовой покупки в официальном магазине бренда (США), без подписки",
       "source": {
         "label": "deathwishcoffee.com",
         "url": "https://www.deathwishcoffee.com/products/death-wish-coffee"
@@ -1694,10 +1527,8 @@
       "model": "LINDOR Milk Chocolate Truffles",
       "title": "Lindt LINDOR Milk Chocolate Truffles",
       "subtitle": "Пакет 75 конфет, 900 г (31.7 oz)",
-      "price": 42,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Lindt (США)",
       "source": {
         "label": "lindtusa.com",
         "url": "https://www.lindtusa.com/milk-chocolate-lindor-truffles-75-pc-bag-44989l"
@@ -1718,10 +1549,8 @@
       "model": "Protein Cereal Variety 4",
       "title": "Magic Spoon Protein Cereal Variety 4",
       "subtitle": "Протеиновые хлопья, 4 коробки",
-      "price": 39,
       "currency": "USD",
       "region": "US",
-      "note": "Цена разовой покупки в официальном магазине бренда (США), без подписки",
       "source": {
         "label": "magicspoon.com",
         "url": "https://magicspoon.com/products/variety-pack-cereal-case"
@@ -1742,10 +1571,8 @@
       "model": "Awake Extra Virgin Olive Oil",
       "title": "Brightland Awake Extra Virgin Olive Oil",
       "subtitle": "Оливковое масло, 375 мл",
-      "price": 38,
       "currency": "USD",
       "region": "US",
-      "note": "Цена разовой покупки в официальном магазине бренда (США), без подписки",
       "source": {
         "label": "brightland.co",
         "url": "https://brightland.co/products/awake"
@@ -1766,10 +1593,8 @@
       "model": "Milk Chocolate 32%",
       "title": "Tony's Chocolonely Milk Chocolate 32%",
       "subtitle": "Большая плитка, 180 г",
-      "price": 6.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине бренда (США)",
       "source": {
         "label": "us.tonyschocolonely.com",
         "url": "https://us.tonyschocolonely.com/products/milk-chocolate-32"
@@ -1790,10 +1615,8 @@
       "model": "Rambler 20 oz Tumbler",
       "title": "YETI Rambler 20 oz Tumbler",
       "subtitle": "Термостакан 591 мл, Riverhead Red",
-      "price": 40,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине YETI (США)",
       "source": {
         "label": "yeti.com",
         "url": "https://www.yeti.com/drinkware/tumblers/rambler-20oz.html"
@@ -1814,10 +1637,8 @@
       "model": "Classic Chrome Arch",
       "title": "Zippo Classic Chrome Arch",
       "subtitle": "Ветрозащитная зажигалка",
-      "price": 24.95,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Zippo (США)",
       "source": {
         "label": "zippo.com",
         "url": "https://zippo.com/products/classic-chrome-arch"
@@ -1838,10 +1659,8 @@
       "model": "Classic SD",
       "title": "Victorinox Classic SD",
       "subtitle": "Швейцарский нож, 7 функций, Falling Snow",
-      "price": 24,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Victorinox (США)",
       "source": {
         "label": "victorinox.com",
         "url": "https://www.victorinox.com/en-US/Products/Swiss-Army-Knife%E2%84%A2-and-Tools/Essentials/Classic-SD-Classic-Colors/p/0.6223.7G"
@@ -1862,10 +1681,8 @@
       "model": "Classic Notebook Large",
       "title": "Moleskine Classic Notebook Large",
       "subtitle": "Блокнот в твёрдой обложке, 13×21 см, чёрный",
-      "price": 26,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Moleskine (США)",
       "source": {
         "label": "moleskine.com",
         "url": "https://www.moleskine.com/en-us/shop/notebooks/the-original-notebook/classic-notebook-black-9788883701122.html"
@@ -1886,10 +1703,8 @@
       "model": "Era 100",
       "title": "Sonos Era 100",
       "subtitle": "Умная колонка",
-      "price": 219,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Sonos (США)",
       "source": {
         "label": "sonos.com",
         "url": "https://www.sonos.com/en-us/shop/era-100"
@@ -1910,10 +1725,8 @@
       "model": "Mini 4 Pro",
       "title": "DJI Mini 4 Pro",
       "subtitle": "Дрон с пультом DJI RC-N2",
-      "price": 759,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине DJI (США)",
       "source": {
         "label": "store.dji.com",
         "url": "https://store.dji.com/product/dji-mini-4-pro"
@@ -1934,10 +1747,8 @@
       "model": "MacBook Neo",
       "title": "Apple MacBook Neo",
       "subtitle": "Самый доступный Mac, базовая версия",
-      "price": 699,
       "currency": "USD",
       "region": "US",
-      "note": "Стартовая цена Apple (США); цена подтверждена списком моделей и помесячной оплатой ×12",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-mac"
@@ -1958,10 +1769,8 @@
       "model": "MacBook Air 13\" (M5)",
       "title": "Apple MacBook Air 13\" (M5)",
       "subtitle": "16 ГБ / 512 ГБ, базовая версия",
-      "price": 1299,
       "currency": "USD",
       "region": "US",
-      "note": "Стартовая цена Apple (США); цена подтверждена списком моделей и помесячной оплатой ×12",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-mac/macbook-air"
@@ -1982,10 +1791,8 @@
       "model": "MacBook Pro 14\"",
       "title": "Apple MacBook Pro 14\"",
       "subtitle": "Базовая версия, 16 ГБ",
-      "price": 1999,
       "currency": "USD",
       "region": "US",
-      "note": "Стартовая цена Apple (США); цена подтверждена списком моделей и помесячной оплатой ×12",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-mac"
@@ -2006,10 +1813,8 @@
       "model": "iMac 24\"",
       "title": "Apple iMac 24\"",
       "subtitle": "Моноблок, базовая версия",
-      "price": 1499,
       "currency": "USD",
       "region": "US",
-      "note": "Стартовая цена Apple (США)",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-mac"
@@ -2030,10 +1835,8 @@
       "model": "Mac mini",
       "title": "Apple Mac mini",
       "subtitle": "Базовая версия",
-      "price": 899,
       "currency": "USD",
       "region": "US",
-      "note": "Стартовая цена Apple (США); цена подтверждена списком моделей и помесячной оплатой ×12",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-mac"
@@ -2054,10 +1857,8 @@
       "model": "Mac Studio",
       "title": "Apple Mac Studio",
       "subtitle": "Базовая версия",
-      "price": 2499,
       "currency": "USD",
       "region": "US",
-      "note": "Стартовая цена Apple (США); цена подтверждена списком моделей и помесячной оплатой ×12",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-mac"
@@ -2078,10 +1879,8 @@
       "model": "Original Kettle 22\"",
       "title": "Weber Original Kettle 22\"",
       "subtitle": "Угольный гриль, чёрный",
-      "price": 149,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Weber (США)",
       "source": {
         "label": "amer.weber.com",
         "url": "https://amer.weber.com/en-us/products/original-kettle-charcoal-grill-22-black-741001"
@@ -2102,10 +1901,8 @@
       "model": "Holbrook",
       "title": "Oakley Holbrook",
       "subtitle": "Солнцезащитные очки, Prizm Sapphire Polarized",
-      "price": 237,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Oakley (США)",
       "source": {
         "label": "oakley.com",
         "url": "https://www.oakley.com/en-us/product/W0OO9102?variant=888392327031"
@@ -2126,10 +1923,8 @@
       "model": "Cosmograph Daytona 126500LN",
       "title": "Rolex Cosmograph Daytona 126500LN",
       "subtitle": "40 мм, сталь Oystersteel",
-      "price": 16900,
       "currency": "USD",
       "region": "US",
-      "note": "Рекомендованная розничная цена Rolex в США",
       "source": {
         "label": "rolex.com",
         "url": "https://www.rolex.com/en-us/watches/cosmograph-daytona/m126500ln-0001"
@@ -2150,10 +1945,8 @@
       "model": "Oyster Perpetual 41",
       "title": "Rolex Oyster Perpetual 41",
       "subtitle": "41 мм, сталь, серебристый циферблат",
-      "price": 7050,
       "currency": "USD",
       "region": "US",
-      "note": "Рекомендованная розничная цена Rolex в США",
       "source": {
         "label": "rolex.com",
         "url": "https://www.rolex.com/en-us/watches/oyster-perpetual/m134300-0001"
@@ -2174,10 +1967,8 @@
       "model": "Seamaster Diver 300M",
       "title": "Omega Seamaster Diver 300M",
       "subtitle": "James Bond 60th Anniversary, 42 мм, сталь",
-      "price": 9400,
       "currency": "USD",
       "region": "US",
-      "note": "Рекомендованная розничная цена Omega в США",
       "source": {
         "label": "omegawatches.com",
         "url": "https://www.omegawatches.com/en-us/watch-omega-seamaster-diver-300m-co-axial-master-chronometer-42-mm-21030422003002"
@@ -2198,10 +1989,8 @@
       "model": "Tiffany T Narrow Ring",
       "title": "Tiffany & Co. Tiffany T Narrow Ring",
       "subtitle": "Кольцо, жёлтое золото 18 карат",
-      "price": 2500,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Tiffany (США)",
       "source": {
         "label": "tiffany.com",
         "url": "https://www.tiffany.com/jewelry/rings/tiffany-t-18k-yellow-gold-rings-1362374234.html"
@@ -2222,10 +2011,8 @@
       "model": "Dior Addict Lip Glow",
       "title": "Dior Addict Lip Glow",
       "subtitle": "Бальзам для губ",
-      "price": 42,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине Dior (США)",
       "source": {
         "label": "dior.com",
         "url": "https://www.dior.com/en_us/beauty/products/dior-addict-lip-glow-Y0457000.html"
@@ -2246,10 +2033,8 @@
       "model": "AirPods Max 2",
       "title": "Apple AirPods Max 2",
       "subtitle": "Полноразмерные наушники",
-      "price": 549,
       "currency": "USD",
       "region": "US",
-      "note": "Фото — официальное изображение Apple со страницы AirPods Max 2",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/buy-airpods/airpods-max-2"
@@ -2270,10 +2055,8 @@
       "model": "Icons 10300 Back to the Future Time Machine",
       "title": "LEGO Icons 10300 Back to the Future Time Machine",
       "subtitle": "Машина времени DeLorean, 1 872 детали",
-      "price": 199.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/back-to-the-future-time-machine-10300"
@@ -2294,10 +2077,8 @@
       "model": "Icons 10333 Barad-dûr",
       "title": "LEGO Icons 10333 Barad-dûr",
       "subtitle": "The Lord of the Rings, 5 471 деталь",
-      "price": 459.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/the-lord-of-the-rings-barad-dur-10333"
@@ -2318,10 +2099,8 @@
       "model": "Icons 11384 Golden Retriever Puppy",
       "title": "LEGO Icons 11384 Golden Retriever Puppy",
       "subtitle": "2 102 детали",
-      "price": 139.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/golden-retriever-puppy-11384"
@@ -2342,10 +2121,8 @@
       "model": "Icons 10330 McLaren MP4/4 & Ayrton Senna",
       "title": "LEGO Icons 10330 McLaren MP4/4 & Ayrton Senna",
       "subtitle": "693 детали",
-      "price": 79.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине LEGO (США)",
       "source": {
         "label": "lego.com",
         "url": "https://www.lego.com/en-us/product/mclaren-mp44-ayrton-senna-10330"
@@ -2366,10 +2143,8 @@
       "model": "Disc Drive for PS5 Digital Edition",
       "title": "Sony Disc Drive for PS5 Digital Edition",
       "subtitle": "Съёмный дисковод",
-      "price": 79,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -2390,10 +2165,8 @@
       "model": "PlayStation 27\" Gaming Monitor",
       "title": "Sony PlayStation 27\" Gaming Monitor",
       "subtitle": "С крючком для зарядки DualSense",
-      "price": 349,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -2414,10 +2187,8 @@
       "model": "Access Controller",
       "title": "Sony Access Controller",
       "subtitle": "Адаптивный контроллер для PS5",
-      "price": 89,
       "currency": "USD",
       "region": "US",
-      "note": "Цена в официальном магазине PlayStation Direct (США)",
       "source": {
         "label": "direct.playstation.com",
         "url": "https://direct.playstation.com/en-us/accessories/ps5"
@@ -2438,10 +2209,8 @@
       "model": "Soda-Flavored Sparkling Water",
       "title": "Liquid Death Soda-Flavored Sparkling Water",
       "subtitle": "Вариативный набор, 12 банок по 355 мл",
-      "price": 15.99,
       "currency": "USD",
       "region": "US",
-      "note": "Цена разовой покупки в официальном магазине бренда (США), без подписки",
       "source": {
         "label": "liquiddeath.com",
         "url": "https://liquiddeath.com/products/soda-flavored-sparkling-water-variety-pack-12oz-12-pack"
@@ -2462,12 +2231,10 @@
       "model": "Salvator Mundi",
       "title": "Leonardo da Vinci (attributed), Salvator Mundi, c. 1500",
       "subtitle": "ок. 1500, масло на ореховой доске, 65,6×45,4 см",
-      "price": 450312500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-11-15",
-      "note": "Продан на торгах Christie's в Нью-Йорке 15 ноября 2017 г., цена с комиссией аукциона ($400 млн + сборы).",
       "source": {
         "label": "en.wikipedia.org — Salvator Mundi (Leonardo)",
         "url": "https://en.wikipedia.org/wiki/Salvator_Mundi_(Leonardo)"
@@ -2497,12 +2264,10 @@
       "model": "Interchange",
       "title": "Willem de Kooning, Interchange, 1955",
       "subtitle": "1955, масло на холсте, абстрактный экспрессионизм",
-      "price": 300000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2015-09",
-      "note": "Частная продажа в сентябре 2015 г. (Дэвид Геффен — Кеннету Гриффину), сумма около $300 млн по данным СМИ.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2525,12 +2290,10 @@
       "model": "Nafea Faa Ipoipo",
       "title": "Paul Gauguin, Nafea Faa Ipoipo (When Will You Marry?), 1892",
       "subtitle": "1892, масло на холсте, таитянский период",
-      "price": 210000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2015-02",
-      "note": "Частная продажа (покупатель — по данным прессы, Катар), сумма около $210 млн.",
       "source": {
         "label": "en.wikipedia.org — Nafea Faa Ipoipo",
         "url": "https://en.wikipedia.org/wiki/Nafea_Faa_Ipoipo"
@@ -2554,12 +2317,10 @@
       "model": "Portrait of Elisabeth Lederer",
       "title": "Gustav Klimt, Portrait of Elisabeth Lederer, 1914–1916",
       "subtitle": "1914–1916, масло на холсте, портрет в полный рост",
-      "price": 236400000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-11-18",
-      "note": "Продан на торгах Sotheby's в Нью-Йорке 18 ноября 2025 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2582,12 +2343,10 @@
       "model": "Les Femmes d'Alger (Version O)",
       "title": "Pablo Picasso, Les Femmes d'Alger (Version 'O'), 1955",
       "subtitle": "1955, масло на холсте, финальная версия серии из 15",
-      "price": 179400000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2015-05-11",
-      "note": "Продана на торгах Christie's в Нью-Йорке 11 мая 2015 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2610,12 +2369,10 @@
       "model": "Nu couché (sur le côté gauche)",
       "title": "Amedeo Modigliani, Nu couché (sur le côté gauche), 1917",
       "subtitle": "1917, масло на холсте, 89×146 см — крупнейшая картина автора",
-      "price": 157200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2018-05-15",
-      "note": "Продана на торгах Sotheby's в Нью-Йорке 15 мая 2018 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2645,12 +2402,10 @@
       "model": "Shot Sage Blue Marilyn",
       "title": "Andy Warhol, Shot Sage Blue Marilyn, 1964",
       "subtitle": "1964, шелкография и акрил на холсте, 101,6×101,6 см",
-      "price": 195000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-05-09",
-      "note": "Продана на торгах Christie's в Нью-Йорке 9 мая 2022 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2673,12 +2428,10 @@
       "model": "Portrait of Adele Bloch-Bauer I",
       "title": "Gustav Klimt, Portrait of Adele Bloch-Bauer I, 1907",
       "subtitle": "1907, масло, золото и серебро на холсте, 138×138 см",
-      "price": 135000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2006-06",
-      "note": "Куплен Рональдом Лаудером в июне 2006 г. у наследников Блох-Бауэр после реституции; выставлен в Neue Galerie.",
       "source": {
         "label": "en.wikipedia.org — Portrait of Adele Bloch-Bauer I",
         "url": "https://en.wikipedia.org/wiki/Portrait_of_Adele_Bloch-Bauer_I"
@@ -2709,12 +2462,10 @@
       "model": "Portrait of Dr. Gachet",
       "title": "Vincent van Gogh, Portrait of Dr. Gachet (first version), 1890",
       "subtitle": "1890, масло на холсте, первая версия, Овер-сюр-Уаз",
-      "price": 82500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "1990-05-15",
-      "note": "Продан на торгах Christie's в Нью-Йорке 15 мая 1990 г. японцу Рёэю Сайто ($75 млн + 10% комиссии).",
       "source": {
         "label": "en.wikipedia.org — Portrait of Dr. Gachet",
         "url": "https://en.wikipedia.org/wiki/Portrait_of_Dr._Gachet"
@@ -2743,12 +2494,10 @@
       "model": "The Scream (1895 pastel)",
       "title": "Edvard Munch, The Scream, 1895 pastel",
       "subtitle": "1895, пастель на картоне, единственная версия в частных руках",
-      "price": 119900000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2012-05-02",
-      "note": "Продан на торгах Sotheby's в Нью-Йорке 2 мая 2012 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2771,12 +2520,10 @@
       "model": "Untitled (Skull), 1982",
       "title": "Jean-Michel Basquiat, Untitled, 1982",
       "subtitle": "1982, акрил, баллончик, масляная пастель на холсте",
-      "price": 110500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-05-18",
-      "note": "Продана на торгах Sotheby's в Нью-Йорке 18 мая 2017 г. (покупатель — Юсаку Маэдзава), цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2799,12 +2546,10 @@
       "model": "Meules (1890)",
       "title": "Claude Monet, Meules, 1890",
       "subtitle": "1890, масло на холсте, серия «Стога»",
-      "price": 110700000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2019-05-14",
-      "note": "Продана на торгах Sotheby's в Нью-Йорке 14 мая 2019 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2828,12 +2573,10 @@
       "model": "Lady with a Fan",
       "title": "Gustav Klimt, Dame mit Fächer (Lady with a Fan), 1917–18",
       "subtitle": "1917–1918, масло на холсте, последний завершённый портрет",
-      "price": 108400000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-06-27",
-      "note": "Продана на торгах Sotheby's в Лондоне 27 июня 2023 г. (£85,3 млн, по данным списка Википедии — $108,4 млн).",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2856,12 +2599,10 @@
       "model": "Portrait of an Artist (Pool…)",
       "title": "David Hockney, Portrait of an Artist (Pool with Two Figures), 1972",
       "subtitle": "1972, акрил на холсте, 214×305 см",
-      "price": 90300000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2018-11-15",
-      "note": "Продана на торгах Christie's в Нью-Йорке 15 ноября 2018 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2884,12 +2625,10 @@
       "model": "Young Man Holding a Roundel",
       "title": "Sandro Botticelli, Portrait of a Young Man Holding a Roundel, c. 1480",
       "subtitle": "ок. 1480, темпера на доске",
-      "price": 92200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-01-21",
-      "note": "Продан на торгах Sotheby's в Нью-Йорке 21 января 2021 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2912,12 +2651,10 @@
       "model": "Les Poseuses, Ensemble (petite)",
       "title": "Georges Seurat, Les Poseuses, Ensemble (Petite version), 1888",
       "subtitle": "1888, масло на холсте, пуантилизм",
-      "price": 149200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-11-09",
-      "note": "Продана на торгах Christie's в Нью-Йорке 9 ноября 2022 г. в рамках коллекции Пола Аллена, цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2940,12 +2677,10 @@
       "model": "L'Empire des lumières (1954)",
       "title": "René Magritte, The Empire of Light, 1954",
       "subtitle": "1954, масло на холсте, сюрреализм",
-      "price": 121200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2024-11-19",
-      "note": "Продана на торгах Christie's в Нью-Йорке 19 ноября 2024 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2968,12 +2703,10 @@
       "model": "Number 7A, 1948",
       "title": "Jackson Pollock, Number 7A, 1948",
       "subtitle": "1948, дриппинг, абстрактный экспрессионизм",
-      "price": 181200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2026-05-18",
-      "note": "Продана на аукционе 18 мая 2026 г., цена с комиссией (по списку самых дорогих картин Википедии).",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -2996,12 +2729,10 @@
       "model": "Suprematist Composition (1916)",
       "title": "Kazimir Malevich, Suprematist Composition, 1916",
       "subtitle": "1916, масло на холсте",
-      "price": 85800000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2018-05-15",
-      "note": "Продана на торгах Christie's в Нью-Йорке 15 мая 2018 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -3024,12 +2755,10 @@
       "model": "Irises",
       "title": "Vincent van Gogh, Irises, 1889",
       "subtitle": "1889, масло на холсте, лечебница Сен-Реми",
-      "price": 53900000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "1987-11-11",
-      "note": "Продана на торгах Sotheby's в Нью-Йорке 11 ноября 1987 г., цена с комиссией; ныне в музее Гетти.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -3052,12 +2781,10 @@
       "model": "Three Studies of Lucian Freud",
       "title": "Francis Bacon, Three Studies of Lucian Freud, 1969",
       "subtitle": "1969, триптих, масло на холсте",
-      "price": 142400000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2013-11-12",
-      "note": "Продан на торгах Christie's в Нью-Йорке 12 ноября 2013 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive paintings",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_paintings"
@@ -3080,12 +2807,10 @@
       "model": "L'Homme au doigt",
       "title": "Alberto Giacometti, L'Homme au doigt (Pointing Man), 1947",
       "subtitle": "1947, бронза, высота ок. 180 см",
-      "price": 141300000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2015-05-11",
-      "note": "Продана на торгах Christie's в Нью-Йорке 11 мая 2015 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive sculptures",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_sculptures"
@@ -3109,12 +2834,10 @@
       "model": "Rabbit",
       "title": "Jeff Koons, Rabbit, 1986",
       "subtitle": "1986, нержавеющая сталь, высота 104 см, тираж 3 + AP",
-      "price": 91100000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2019-05-15",
-      "note": "Продана на торгах Christie's в Нью-Йорке 15 мая 2019 г., цена с комиссией (покупатель — Роберт Мнучин для Стивена Коэна).",
       "source": {
         "label": "en.wikipedia.org — List of most expensive sculptures",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_sculptures"
@@ -3136,12 +2859,10 @@
       "model": "Guennol Lioness",
       "title": "Guennol Lioness, Elamite limestone figure, c. 3000 BC",
       "subtitle": "ок. 3000 г. до н. э., известняк, высота 8,3 см",
-      "price": 57200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2007-12-05",
-      "note": "Продана на торгах Sotheby's в Нью-Йорке 5 декабря 2007 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — Guennol Lioness",
         "url": "https://en.wikipedia.org/wiki/Guennol_Lioness"
@@ -3163,12 +2884,10 @@
       "model": "Everydays: The First 5000 Days",
       "title": "Beeple (Mike Winkelmann), Everydays: The First 5000 Days, NFT, 2021",
       "subtitle": "2021, цифровой коллаж из 5000 изображений (NFT)",
-      "price": 69300000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-03-11",
-      "note": "Продан на онлайн-торгах Christie's в марте 2021 г. покупателю MetaKovan (оплата в эфире), цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — Everydays: the First 5000 Days",
         "url": "https://en.wikipedia.org/wiki/Everydays:_the_First_5000_Days"
@@ -3191,12 +2910,10 @@
       "model": "Love Is in the Bin",
       "title": "Banksy, Love Is in the Bin (formerly Girl with Balloon), 2018",
       "subtitle": "2006/2018, баллончик и акрил на холсте, частично разрезан шредером",
-      "price": 25327452,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-10",
-      "note": "Продана на торгах Sotheby's в Лондоне в октябре 2021 г. за £18 582 000 (≈ $25,3 млн по курсу на день продажи).",
       "source": {
         "label": "en.wikipedia.org — Love Is in the Bin",
         "url": "https://en.wikipedia.org/wiki/Love_Is_in_the_Bin"
@@ -3220,12 +2937,10 @@
       "model": "1933 Double Eagle",
       "title": "1933 Saint-Gaudens $20 Double Eagle gold coin",
       "subtitle": "1933, золотая монета $20, единственный легальный экземпляр",
-      "price": 18872250,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-06-08",
-      "note": "Продана на торгах Sotheby's в Нью-Йорке 8 июня 2021 г.",
       "source": {
         "label": "en.wikipedia.org — 1933 double eagle",
         "url": "https://en.wikipedia.org/wiki/1933_double_eagle"
@@ -3248,12 +2963,10 @@
       "model": "1794 Flowing Hair Dollar",
       "title": "1794 Flowing Hair silver dollar (finest known)",
       "subtitle": "1794, серебро, лучший известный экземпляр",
-      "price": 10016875,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2013-01",
-      "note": "Продан на публичных торгах Stack's Bowers Galleries в январе 2013 г.",
       "source": {
         "label": "en.wikipedia.org — Flowing Hair dollar",
         "url": "https://en.wikipedia.org/wiki/Flowing_Hair_dollar"
@@ -3276,12 +2989,10 @@
       "model": "Brasher Doubloon",
       "title": "1787 Brasher Doubloon, gold",
       "subtitle": "1787, золото, частная чеканка Эфраима Брашера",
-      "price": 9360000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-01",
-      "note": "Продан на торгах Heritage Auctions в январе 2021 г. (около $9,36 млн).",
       "source": {
         "label": "en.wikipedia.org — Brasher Doubloon",
         "url": "https://en.wikipedia.org/wiki/Brasher_Doubloon"
@@ -3304,12 +3015,10 @@
       "model": "British Guiana 1c Magenta",
       "title": "British Guiana 1c magenta stamp, 1856",
       "subtitle": "1856, марка номиналом 1 цент, единственный экземпляр",
-      "price": 8307000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-06-08",
-      "note": "Продана на торгах Sotheby's в Нью-Йорке 8 июня 2021 г. компании Stanley Gibbons, цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — British Guiana 1c magenta",
         "url": "https://en.wikipedia.org/wiki/British_Guiana_1c_magenta"
@@ -3333,12 +3042,10 @@
       "model": "Inverted Jenny",
       "title": "Inverted Jenny 24c airmail stamp, 1918 (single)",
       "subtitle": "1918, авиапочтовая марка 24 цента с перевёрнутым самолётом",
-      "price": 2006000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-11-11",
-      "note": "Одиночная марка продана на торгах Robert A. Siegel 11 ноября 2023 г. ($1,7 млн молоток + 18% комиссии) — рекорд для одной марки этого типа.",
       "source": {
         "label": "en.wikipedia.org — Inverted Jenny",
         "url": "https://en.wikipedia.org/wiki/Inverted_Jenny"
@@ -3361,12 +3068,10 @@
       "model": "1952 Topps Mickey Mantle SGC 9.5",
       "title": "1952 Topps #311 Mickey Mantle, SGC MT 9.5",
       "subtitle": "1952, бейсбольная карточка, грейд SGC 9.5",
-      "price": 12600000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-08-28",
-      "note": "Продана на торгах Heritage Auctions 28 августа 2022 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive sports cards",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_sports_cards"
@@ -3389,12 +3094,10 @@
       "model": "T206 Honus Wagner SGC 2",
       "title": "1909–11 T206 Honus Wagner, SGC 2",
       "subtitle": "1909–1911, табачная бейсбольная карточка, грейд SGC 2",
-      "price": 7250000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2022-08",
-      "note": "Частная продажа в августе 2022 г. (при посредничестве Goldin), рекорд для этой карточки.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive sports cards",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_sports_cards"
@@ -3417,12 +3120,10 @@
       "model": "Action Comics #1 CGC 9.0",
       "title": "Action Comics #1 (1938), CGC 9.0",
       "subtitle": "1938, первое появление Супермена, грейд CGC 9.0",
-      "price": 15000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2026-01",
-      "note": "Частная сделка, раскрытая 9 января 2026 г. (Metropolis Collectibles и ComicConnect), покупатель и продавец анонимны.",
       "source": {
         "label": "en.wikipedia.org — Action Comics 1",
         "url": "https://en.wikipedia.org/wiki/Action_Comics_1"
@@ -3445,12 +3146,10 @@
       "model": "Superman #1 (1939)",
       "title": "Superman #1 (1939)",
       "subtitle": "1939, первый сольный выпуск Супермена",
-      "price": 9120000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-11",
-      "note": "Продан на аукционе в ноябре 2025 г. (по списку самых дорогих книг и рукописей Википедии).",
       "source": {
         "label": "en.wikipedia.org — List of most expensive books and manuscripts",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_books_and_manuscripts"
@@ -3473,12 +3172,10 @@
       "model": "Stan the T. rex",
       "title": "Stan (BHI 3033), Tyrannosaurus rex skeleton",
       "subtitle": "~67 млн лет, скелет T. rex, около 70% костей, Южная Дакота",
-      "price": 31800000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2020-10-06",
-      "note": "Продан на вечерних торгах Christie's в Нью-Йорке 6 октября 2020 г. анонимному покупателю.",
       "source": {
         "label": "en.wikipedia.org — Stan (dinosaur)",
         "url": "https://en.wikipedia.org/wiki/Stan_(dinosaur)"
@@ -3502,12 +3199,10 @@
       "model": "Apex the Stegosaurus",
       "title": "Apex, Stegosaurus skeleton",
       "subtitle": "~150 млн лет, скелет стегозавра, 254 кости, Колорадо",
-      "price": 44600000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2024-07-17",
-      "note": "Продан на торгах Sotheby's в Нью-Йорке 17 июля 2024 г. Кеннету Гриффину.",
       "source": {
         "label": "en.wikipedia.org — Apex (dinosaur)",
         "url": "https://en.wikipedia.org/wiki/Apex_(dinosaur)"
@@ -3531,12 +3226,10 @@
       "model": "Sue the T. rex",
       "title": "Sue (FMNH PR 2081), Tyrannosaurus rex skeleton",
       "subtitle": "~67 млн лет, ~90% скелета, крупнейший T. rex",
-      "price": 8362500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "1997-10-04",
-      "note": "Продан на торгах Sotheby's 4 октября 1997 г. Филдовскому музею в Чикаго.",
       "source": {
         "label": "en.wikipedia.org — Sue (dinosaur)",
         "url": "https://en.wikipedia.org/wiki/Sue_(dinosaur)"
@@ -3560,12 +3253,10 @@
       "model": "Codex Leicester",
       "title": "Leonardo da Vinci, Codex Leicester",
       "subtitle": "1506–1510, 72 страницы записей и рисунков",
-      "price": 30802500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "1994-11-11",
-      "note": "Продан на торгах Christie's в Нью-Йорке 11 ноября 1994 г. Биллу Гейтсу.",
       "source": {
         "label": "en.wikipedia.org — Codex Leicester",
         "url": "https://en.wikipedia.org/wiki/Codex_Leicester"
@@ -3589,12 +3280,10 @@
       "model": "US Constitution, first printing",
       "title": "US Constitution, first printing (1787)",
       "subtitle": "1787, один из немногих сохранившихся оттисков",
-      "price": 43200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-11",
-      "note": "Продан на торгах Sotheby's в ноябре 2021 г. Кеннету Гриффину.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive books and manuscripts",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_books_and_manuscripts"
@@ -3617,12 +3306,10 @@
       "model": "Codex Sassoon",
       "title": "Codex Sassoon 1053, Hebrew Bible",
       "subtitle": "конец IX века, древнейшая почти полная еврейская Библия",
-      "price": 38100000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-05",
-      "note": "Продан на торгах Sotheby's в мае 2023 г.; приобретён Альфредом Мозесом для музея ANU в Тель-Авиве.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive books and manuscripts",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_books_and_manuscripts"
@@ -3645,12 +3332,10 @@
       "model": "Magna Carta (1297 copy)",
       "title": "Magna Carta, 1297 exemplification",
       "subtitle": "1297, пергамент, одна из оригинальных копий",
-      "price": 21320000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2007-12",
-      "note": "Продана на торгах Sotheby's в Нью-Йорке в декабре 2007 г. Дэвиду Рубенстайну.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive books and manuscripts",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_books_and_manuscripts"
@@ -3673,12 +3358,10 @@
       "model": "Shakespeare First Folio",
       "title": "William Shakespeare, First Folio (1623)",
       "subtitle": "1623, первое собрание пьес Шекспира",
-      "price": 9980000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2020-10",
-      "note": "Продано на торгах Christie's в октябре 2020 г. дилеру Стефану Лёвентайлю.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive books and manuscripts",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_books_and_manuscripts"
@@ -3701,12 +3384,10 @@
       "model": "Gutenberg Bible (Doheny copy)",
       "title": "Gutenberg Bible, Doheny copy (vol. 1)",
       "subtitle": "1450–1455, первая книга, напечатанная подвижными литерами",
-      "price": 5390000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "1987-10",
-      "note": "Продана в октябре 1987 г. японскому книжному дому Maruzen.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive books and manuscripts",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_books_and_manuscripts"
@@ -3729,12 +3410,10 @@
       "model": "Ruby Slippers (stolen pair)",
       "title": "Dorothy's ruby slippers from The Wizard of Oz (1939)",
       "subtitle": "1939, реквизит из фильма; пара, украденная в 2005 г.",
-      "price": 32500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2024-12-07",
-      "note": "Проданы на торгах Heritage Auctions 7 декабря 2024 г. ($28 млн молоток, $32,5 млн с комиссией).",
       "source": {
         "label": "en.wikipedia.org — Ruby slippers",
         "url": "https://en.wikipedia.org/wiki/Ruby_slippers"
@@ -3758,12 +3437,10 @@
       "model": "David Gilmour's Black Strat",
       "title": "David Gilmour's 1969 Fender Stratocaster 'The Black Strat'",
       "subtitle": "1969 Fender Stratocaster, гитара Pink Floyd",
-      "price": 3975000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2019-06",
-      "note": "Продана на благотворительных торгах Christie's в июне 2019 г. Джиму Ирсею.",
       "source": {
         "label": "en.wikipedia.org — The Black Strat",
         "url": "https://en.wikipedia.org/wiki/The_Black_Strat"
@@ -3786,12 +3463,10 @@
       "model": "Kurt Cobain's Martin D-18E",
       "title": "Kurt Cobain's 1959 Martin D-18E acoustic-electric guitar",
       "subtitle": "1959 Martin D-18E, концерт MTV Unplugged 1993",
-      "price": 6100000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2020-06",
-      "note": "Продана на аукционе в Беверли-Хиллз в июне 2020 г. ($5 млн молоток, $6,1 млн с комиссией).",
       "source": {
         "label": "en.wikipedia.org — The Black Strat",
         "url": "https://en.wikipedia.org/wiki/The_Black_Strat"
@@ -3814,12 +3489,10 @@
       "model": "Babe Ruth 'Called Shot' Jersey",
       "title": "Babe Ruth's jersey from the 1932 World Series 'called shot' game",
       "subtitle": "1932, игровая форма New York Yankees, Мировая серия",
-      "price": 24120000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2024-08-25",
-      "note": "Продана через Heritage Auctions 25 августа 2024 г. (около $24,12 млн) — рекорд для спортивного предмета.",
       "source": {
         "label": "en.wikipedia.org — Babe Ruth's called shot",
         "url": "https://en.wikipedia.org/wiki/Babe_Ruth%27s_called_shot"
@@ -3842,12 +3515,10 @@
       "model": "Maradona 'Hand of God' Shirt",
       "title": "Diego Maradona's shirt, Argentina v England, 1986 World Cup",
       "subtitle": "1986, матч Аргентина — Англия, ЧМ в Мексике",
-      "price": 9200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-05-04",
-      "note": "Продана на торгах Sotheby's 4 мая 2022 г. за £7 142 500 (≈ $9,2 млн).",
       "source": {
         "label": "en.wikipedia.org — Argentina v England (1986 FIFA World Cup)",
         "url": "https://en.wikipedia.org/wiki/Argentina_v_England_(1986_FIFA_World_Cup)"
@@ -3870,12 +3541,10 @@
       "model": "Apple-1 (Henry Ford copy)",
       "title": "Apple-1 computer, working unit with keyboard and monitor",
       "subtitle": "1976, ручная сборка Возняка; с клавиатурой, монитором, мануалом",
-      "price": 905000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2014-10",
-      "note": "Продан на торгах Bonhams в октябре 2014 г.; приобретён Музеем Генри Форда.",
       "source": {
         "label": "en.wikipedia.org — Apple I",
         "url": "https://en.wikipedia.org/wiki/Apple_I"
@@ -3898,12 +3567,10 @@
       "model": "Jane Birkin's Original Birkin",
       "title": "The original Hermès Birkin bag made for Jane Birkin",
       "subtitle": "1985, чёрная кожа, первый прототип сумки Birkin",
-      "price": 10100000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-07",
-      "note": "Продана на аукционе в Париже в июле 2025 г. за €8,6 млн (≈ $10,1 млн по данным Википедии).",
       "source": {
         "label": "en.wikipedia.org — Birkin bag",
         "url": "https://en.wikipedia.org/wiki/Birkin_bag"
@@ -3926,12 +3593,10 @@
       "model": "300 SLR Uhlenhaut Coupé",
       "title": "1955 Mercedes-Benz 300 SLR Uhlenhaut Coupé",
       "subtitle": "1955, рядная 8-ка 3.0 л, шасси 196.110-00008/55",
-      "price": 143000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-05-05",
-      "note": "Продан на аукционе RM Sotheby's (закрытый аукцион в музее Mercedes-Benz, Штутгарт); номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -3960,12 +3625,10 @@
       "model": "W196 R Stromlinienwagen",
       "title": "1954 Mercedes-Benz W196 R Stromlinienwagen",
       "subtitle": "1954, гоночный болид F1 с обтекаемым кузовом, шасси 00009/54",
-      "price": 53917370,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-02-01",
-      "note": "Продан на аукционе RM Sotheby's в Штутгарте; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -3994,12 +3657,10 @@
       "model": "330 LM / 250 GTO #3765LM",
       "title": "1962 Ferrari 330 LM / 250 GTO, s/n 3765LM",
       "subtitle": "1962, V12 4.0 л, шасси 3765LM, заводская машина Ле-Мана",
-      "price": 51705000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-11-13",
-      "note": "Продан на аукционе RM Sotheby's в Нью-Йорке; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4022,12 +3683,10 @@
       "model": "250 GTO #3413GT",
       "title": "1962 Ferrari 250 GTO, s/n 3413GT",
       "subtitle": "1962, V12 3.0 л, шасси 3413GT, один из 36 экземпляров",
-      "price": 48405000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2018-08-26",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4056,12 +3715,10 @@
       "model": "250 LM #5893",
       "title": "1964 Ferrari 250 LM, s/n 5893",
       "subtitle": "1964, среднемоторный V12 3.3 л, шасси 5893",
-      "price": 36344960,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-02-05",
-      "note": "Продан на аукционе RM Sotheby's в Париже; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4089,12 +3746,10 @@
       "model": "335 S Scaglietti",
       "title": "1957 Ferrari 335 Sport Scaglietti, s/n 0674",
       "subtitle": "1957, гоночный спайдер V12 4.0 л, шасси 0674",
-      "price": 35730510,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2016-02",
-      "note": "Продан на аукционе Artcurial на Rétromobile в Париже; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4123,12 +3778,10 @@
       "model": "412 P",
       "title": "1967 Ferrari 412 P, s/n 0854",
       "subtitle": "1967, спортпрототип V12 4.0 л, шасси 0854",
-      "price": 30255000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-08-18",
-      "note": "Продан на аукционе Bonhams в Кармеле (Калифорния); номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4157,12 +3810,10 @@
       "model": "W196 (Fangio)",
       "title": "1954 Mercedes-Benz W196, chassis 00006/54",
       "subtitle": "1954, открытый болид F1, шасси 196 010 00006/54",
-      "price": 29600000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2013-07-12",
-      "note": "Продан на аукционе Bonhams на фестивале скорости в Гудвуде; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4184,12 +3835,10 @@
       "model": "275 GTB/4*S NART Spider",
       "title": "1967 Ferrari 275 GTB/4*S N.A.R.T. Spider, s/n 10709",
       "subtitle": "1967, V12 3.3 л, шасси 10709",
-      "price": 27500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2013-08-17",
-      "note": "Продан на аукционе RM Auctions в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4218,12 +3867,10 @@
       "model": "DBR1/1",
       "title": "1956 Aston Martin DBR1, chassis DBR1/1",
       "subtitle": "1956, гоночный спайдер, шасси DBR1/1",
-      "price": 22550000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-08-19",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4251,12 +3898,10 @@
       "model": "SSJ",
       "title": "1935 Duesenberg SSJ, chassis 2594",
       "subtitle": "1935, рядная 8-ка с нагнетателем, шасси 2594",
-      "price": 22000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2018-08-25",
-      "note": "Продан на аукционе Gooding & Company в Пеббл-Бич; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4278,12 +3923,10 @@
       "model": "D-Type XKD 501",
       "title": "1955 Jaguar D-Type, chassis XKD 501",
       "subtitle": "1955, рядная 6-ка 3.4 л, шасси XKD 501",
-      "price": 21780000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2016-08-19",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4312,12 +3955,10 @@
       "model": "F1 #029",
       "title": "1995 McLaren F1, chassis 029",
       "subtitle": "1995, V12 BMW 6.1 л, шасси 029",
-      "price": 20465000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-08-14",
-      "note": "Продан на аукционе Gooding & Company в Пеббл-Бич; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4339,12 +3980,10 @@
       "model": "8C 2900B Lungo Spider",
       "title": "1939 Alfa Romeo 8C 2900B Lungo Spider by Touring",
       "subtitle": "1939, рядная 8-ка 2.9 л с двумя компрессорами, шасси 412041",
-      "price": 19800000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2016-08-20",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4366,12 +4005,10 @@
       "model": "DB4 GT Zagato",
       "title": "1962 Aston Martin DB4 GT Zagato, DB4GT/0186/R",
       "subtitle": "1962, рядная 6-ка 3.7 л, шасси DB4GT/0186/R",
-      "price": 14300000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2015-12-10",
-      "note": "Продан на аукционе RM Sotheby's в Нью-Йорке; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4393,12 +4030,10 @@
       "model": "917K (Le Mans film)",
       "title": "1970 Porsche 917K, chassis 917-024",
       "subtitle": "1970, оппозитный 12-цилиндровый, шасси 917-024",
-      "price": 14080000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-08-19",
-      "note": "Продан на аукционе Gooding & Company в Пеббл-Бич; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4421,12 +4056,10 @@
       "model": "Cobra CSX2000",
       "title": "1962 Shelby 260 Cobra, chassis CSX 2000",
       "subtitle": "1962, V8 Ford 260, первый построенный Cobra",
-      "price": 13750000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2016-08-19",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4449,12 +4082,10 @@
       "model": "T150-C SS Teardrop",
       "title": "1937 Talbot-Lago T150-C SS Figoni et Falaschi, chassis 90107",
       "subtitle": "1937, кузов Figoni et Falaschi, шасси 90107",
-      "price": 13425000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-03-05",
-      "note": "Продан на аукционе Gooding & Company на Амелия-Айленд; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4477,12 +4108,10 @@
       "model": "XKSS #707",
       "title": "1957 Jaguar XKSS, chassis XKSS 707",
       "subtitle": "1957, рядная 6-ка 3.4 л, шасси XKSS 707",
-      "price": 13205000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-08-18",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4510,12 +4139,10 @@
       "model": "GT40 P/1074 (Gulf)",
       "title": "1968 Ford GT40 Gulf/Mirage, chassis P/1074",
       "subtitle": "1968, V8, шасси P/1074, машина-камера фильма «Ле-Ман»",
-      "price": 11000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2012-08-17",
-      "note": "Продан на аукционе RM Auctions в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4538,12 +4165,10 @@
       "model": "F40 LM",
       "title": "1993 Ferrari F40 LM, chassis 95448",
       "subtitle": "1993, V8 битурбо, шасси 95448",
-      "price": 11005000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-08-16",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4565,12 +4190,10 @@
       "model": "Chiron Profilée",
       "title": "2022 Bugatti Chiron Profilée",
       "subtitle": "2022, W16 8.0 л, 1500 л.с., единственный экземпляр",
-      "price": 10608215,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-01-31",
-      "note": "Продан на аукционе RM Sotheby's в Париже; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4592,12 +4215,10 @@
       "model": "CLK GTR Roadster",
       "title": "2002 Mercedes-Benz CLK GTR Roadster, chassis 000034",
       "subtitle": "2002, V12 6.9 л, шасси 000034",
-      "price": 10235000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-11-17",
-      "note": "Продан на аукционе RM Sotheby's в Лас-Вегасе; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4619,12 +4240,10 @@
       "model": "Type 41 Royale Kellner",
       "title": "1931 Bugatti Type 41 Royale Kellner Coupé, chassis 41.141",
       "subtitle": "1931, рядная 8-ка 12.7 л, шасси 41.141",
-      "price": 9800000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "1987-11-17",
-      "note": "Продан на аукционе Christie's в Лондоне; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4647,12 +4266,10 @@
       "model": "300 SL Alloy Gullwing",
       "title": "1956 Mercedes-Benz 300 SL 'Alloy' Gullwing",
       "subtitle": "1956, рядная 6-ка 3.0 л, алюминиевый кузов",
-      "price": 9355000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2024-10-26",
-      "note": "Продан на аукционе RM Sotheby's в Лос-Анджелесе; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4675,12 +4292,10 @@
       "model": "Divo",
       "title": "2020 Bugatti Divo",
       "subtitle": "2020, W16 8.0 л, 1500 л.с., один из 40",
-      "price": 8557500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-08-15",
-      "note": "Продан на аукционе Bonhams в Кармеле (Калифорния); номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4702,12 +4317,10 @@
       "model": "E-Type Lightweight",
       "title": "1963 Jaguar E-Type Lightweight, chassis S850664",
       "subtitle": "1963, рядная 6-ка 3.8 л, алюминиевый кузов",
-      "price": 8000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-08-18",
-      "note": "Продан на аукционе Bonhams в Кармеле (Калифорния); номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4729,12 +4342,10 @@
       "model": "Cobra Daytona Coupe",
       "title": "1965 Shelby Cobra Daytona Coupe, chassis CSX2601",
       "subtitle": "1965, V8 Ford 289, шасси CSX2601",
-      "price": 7685000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2009-08-15",
-      "note": "Продан на аукционе Mecum в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4756,12 +4367,10 @@
       "model": "10 hp (1904)",
       "title": "1904 Rolls-Royce 10 hp Two-Seater, chassis 20154",
       "subtitle": "1904, двухцилиндровый 1.8 л, шасси 20154",
-      "price": 7254290,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2007-12-03",
-      "note": "Продан на аукционе Bonhams в Лондоне; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4783,12 +4392,10 @@
       "model": "DB5 James Bond",
       "title": "1965 Aston Martin DB5 'James Bond' Thunderball promotional car, DB5/2008/R",
       "subtitle": "1964/65, рядная 6-ка 4.0 л, шпионские гаджеты, DB5/2008/R",
-      "price": 6385000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2019-08-15",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4811,12 +4418,10 @@
       "model": "911 GT1 Straßenversion",
       "title": "1998 Porsche 911 GT1 Straßenversion",
       "subtitle": "1998, оппозитная 6-ка битурбо 3.2 л, омологационная серия",
-      "price": 5665000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-03-10",
-      "note": "Продан на аукционе Gooding & Company на Амелия-Айленд; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4839,12 +4444,10 @@
       "model": "Zonda R Revolución",
       "title": "2010 Pagani Zonda Revolución",
       "subtitle": "трековый гиперкар, V12 AMG 6.0 л, экземпляр №5",
-      "price": 5340000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-03-04",
-      "note": "Продан на аукционе RM Sotheby's на Амелия-Айленд; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4866,12 +4469,10 @@
       "model": "MC12 Stradale",
       "title": "2005 Maserati MC12 Stradale",
       "subtitle": "2005, V12 6.0 л, один из 50 дорожных",
-      "price": 5202500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-08-14",
-      "note": "Продан на аукционе Broad Arrow в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4893,12 +4494,10 @@
       "model": "Batmobile (1966 TV)",
       "title": "1966 Batmobile, George Barris, #1",
       "subtitle": "на базе концепта Lincoln Futura 1955, оригинал из сериала «Бэтмен»",
-      "price": 4620000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2013-01-19",
-      "note": "Продан на аукционе Barrett-Jackson в Скоттсдейле (Аризона); номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4922,12 +4521,10 @@
       "model": "Futurliner #11",
       "title": "1950 GM Futurliner, #011",
       "subtitle": "1950, автобус-выставка «Parade of Progress», экземпляр №11",
-      "price": 4320000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2006-01-21",
-      "note": "Продан на аукционе Barrett-Jackson в Скоттсдейле (Аризона); номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4949,12 +4546,10 @@
       "model": "CTR Yellowbird Lightweight",
       "title": "1989 RUF CTR 'Yellowbird' Lightweight",
       "subtitle": "1989, оппозитная 6-ка битурбо 3.4 л, облегчённая версия",
-      "price": 4295000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-08-16",
-      "note": "Продан на аукционе RM Sotheby's в Монтерее; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -4977,12 +4572,10 @@
       "model": "La Marquise (1884)",
       "title": "1884 De Dion, Bouton et Trépardoux Dos-à-Dos Steam Runabout 'La Marquise'",
       "subtitle": "1884, паровой двигатель, старейший ходовой автомобиль",
-      "price": 4620000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2011-10-07",
-      "note": "Продан на аукционе RM Auctions в Херши (Пенсильвания); номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -5004,12 +4597,10 @@
       "model": "Mustang GT «Bullitt»",
       "title": "1968 Ford Mustang GT 390 'Bullitt' (Steve McQueen hero car)",
       "subtitle": "1968, V8 390, оригинальная «геройская» машина Стива Маккуина",
-      "price": 3740000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2020-01-10",
-      "note": "Продан на аукционе Mecum в Киссимми (Флорида) в январе 2020 г.; рекорд для Mustang.",
       "source": {
         "label": "jalopnik.com",
         "url": "https://jalopnik.com/the-mustang-from-bullitt-sells-for-3-74-million-at-a-1840937700"
@@ -5032,12 +4623,10 @@
       "model": "911 Turbo S (992.2)",
       "title": "2026 Porsche 911 Turbo S Coupe",
       "subtitle": "2026 г., гибрид T-Hybrid 3.6 л, 701 л.с., купе",
-      "price": 272650,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая цена (MSRP) купе в США, включая доставку, по данным Road & Track (перепубликация AOL).",
       "source": {
         "label": "aol.com / Road & Track",
         "url": "https://www.aol.com/finance/2026-porsche-911-turbo-701-130000178.html"
@@ -5060,12 +4649,10 @@
       "model": "Spectre",
       "title": "2026 Rolls-Royce Spectre",
       "subtitle": "2026 г., электрокупе, 2 электромотора",
-      "price": 397750,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/rolls-royce/spectre/2026/"
@@ -5088,12 +4675,10 @@
       "model": "12Cilindri",
       "title": "2025 Ferrari 12Cilindri",
       "subtitle": "2025 г., V12 6.5 л, 830 л.с., купе",
-      "price": 472000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/ferrari/12-cilindri/"
@@ -5116,12 +4701,10 @@
       "model": "Revuelto",
       "title": "2026 Lamborghini Revuelto",
       "subtitle": "2026 г., гибрид V12 6.5 л, 1015 л.с.",
-      "price": 673294,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/lamborghini/revuelto/"
@@ -5143,12 +4726,10 @@
       "model": "Cullinan Series II",
       "title": "2027 Rolls-Royce Cullinan Series II",
       "subtitle": "2027 г., V12 6.75 л битурбо, внедорожник",
-      "price": 442750,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2027",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/rolls-royce/cullinan/"
@@ -5171,12 +4752,10 @@
       "model": "Phantom",
       "title": "2027 Rolls-Royce Phantom",
       "subtitle": "2027 г., V12 6.75 л битурбо, седан",
-      "price": 560350,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2027",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/rolls-royce/phantom/"
@@ -5198,12 +4777,10 @@
       "model": "Corvette Z06 (C8)",
       "title": "2027 Chevrolet Corvette Z06",
       "subtitle": "2027 г., V8 5.5 л атмосферный, 670 л.с.",
-      "price": 121395,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2027",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/chevrolet/corvette/"
@@ -5226,12 +4803,10 @@
       "model": "Corvette ZR1 (C8)",
       "title": "2027 Chevrolet Corvette ZR1",
       "subtitle": "2027 г., V8 5.5 л битурбо, 1064 л.с.",
-      "price": 197195,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2027",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/chevrolet/corvette/"
@@ -5254,12 +4829,10 @@
       "model": "750S",
       "title": "2027 McLaren 750S",
       "subtitle": "2027 г., V8 4.0 л битурбо, 750 л.с.",
-      "price": 375500,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2027",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/mclaren/750s/"
@@ -5281,12 +4854,10 @@
       "model": "296 GTB",
       "title": "2026 Ferrari 296 GTB",
       "subtitle": "2026 г., гибрид V6 3.0 л, 830 л.с.",
-      "price": 338250,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/ferrari/296-gtb/"
@@ -5308,12 +4879,10 @@
       "model": "Continental GT (4th gen)",
       "title": "2025 Bentley Continental GT",
       "subtitle": "2025 г., гибрид V8 4.0 л, купе 4-го поколения",
-      "price": 296950,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book (младшая версия в прайсе KBB); без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/bentley/continental-gt/"
@@ -5335,12 +4904,10 @@
       "model": "Mustang Dark Horse SC",
       "title": "2026 Ford Mustang Dark Horse SC",
       "subtitle": "2026 г., V8 5.2 л с компрессором",
-      "price": 108485,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/ford/mustang/"
@@ -5362,12 +4929,10 @@
       "model": "R1S",
       "title": "2027 Rivian R1S Premium",
       "subtitle": "2027 г., электрический 7-местный внедорожник",
-      "price": 85885,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2027",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/rivian/r1s/"
@@ -5389,12 +4954,10 @@
       "model": "Emira",
       "title": "2026 Lotus Emira Turbo SE",
       "subtitle": "2026 г., 2.0 л турбо, среднемоторное купе",
-      "price": 109400,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/lotus/emira/"
@@ -5416,12 +4979,10 @@
       "model": "DB12",
       "title": "2025 Aston Martin DB12 Coupe",
       "subtitle": "2025 г., V8 4.0 л битурбо, 680 л.с.",
-      "price": 249000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/aston-martin/db12/"
@@ -5443,12 +5004,10 @@
       "model": "Hummer EV Pickup",
       "title": "2026 GMC Hummer EV Pickup 2X",
       "subtitle": "2026 г., электропикап, 2 мотора",
-      "price": 99895,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/gmc/hummer-ev/"
@@ -5471,12 +5030,10 @@
       "model": "GR Supra (A90)",
       "title": "2026 Toyota GR Supra 3.0",
       "subtitle": "2026 г., рядная 6 3.0 л турбо, 5-е поколение",
-      "price": 59495,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/toyota/gr-supra/"
@@ -5499,12 +5056,10 @@
       "model": "Temerario",
       "title": "2026 Lamborghini Temerario",
       "subtitle": "2026 г., гибрид V8 4.0 л битурбо, 920 л.с.",
-      "price": 386649,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/lamborghini/temerario/"
@@ -5526,12 +5081,10 @@
       "model": "Purosangue",
       "title": "2025 Ferrari Purosangue",
       "subtitle": "2025 г., V12 6.5 л, 4 двери",
-      "price": 438686,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/ferrari/purosangue/"
@@ -5553,12 +5106,10 @@
       "model": "Vanquish",
       "title": "2026 Aston Martin Vanquish",
       "subtitle": "2026 г., V12 5.2 л битурбо, 824 л.с.",
-      "price": 465300,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Стартовая рекомендованная цена (MSRP) в США по данным Kelley Blue Book; без опций.",
       "source": {
         "label": "kbb.com (Kelley Blue Book)",
         "url": "https://www.kbb.com/aston-martin/vanquish/"
@@ -5580,12 +5131,10 @@
       "model": "ONE",
       "title": "Mercedes-AMG One",
       "subtitle": "2022–2025, гибрид с мотором Формулы-1 1.6 л V6, 275 шт.",
-      "price": 2720000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2017",
-      "note": "Заявленная цена за экземпляр — $2,72 млн по данным Википедии (объявлена при анонсе Project One).",
       "source": {
         "label": "Wikipedia",
         "url": "https://en.wikipedia.org/wiki/Mercedes-AMG_One"
@@ -5608,12 +5157,10 @@
       "model": "Utopia Coupe",
       "title": "Pagani Utopia Coupe",
       "subtitle": "2024 г., V12 6.0 л AMG битурбо, механика, 99 шт.",
-      "price": 2190000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024",
-      "note": "Стартовая цена купе Utopia модельного 2024 года по данным Википедии.",
       "source": {
         "label": "Wikipedia",
         "url": "https://en.wikipedia.org/wiki/Pagani_Utopia"
@@ -5635,12 +5182,10 @@
       "model": "F40",
       "title": "Ferrari F40 (1987–1992)",
       "subtitle": "1987–1992, V8 2.9 л битурбо, 478 л.с.",
-      "price": 3640400,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/ferrari/f40/"
@@ -5662,12 +5207,10 @@
       "model": "959",
       "title": "Porsche 959 (1986–1993)",
       "subtitle": "1986–1993, оппозитная 6 2.85 л битурбо, полный привод",
-      "price": 2669339,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/porsche/959/"
@@ -5689,12 +5232,10 @@
       "model": "2000GT",
       "title": "Toyota 2000GT (1967–1970)",
       "subtitle": "1967–1970, рядная 6 2.0 л, купе",
-      "price": 1043461,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/toyota/2000gt/"
@@ -5716,12 +5257,10 @@
       "model": "M1 (E26)",
       "title": "BMW M1 road car (1978–1981)",
       "subtitle": "1978–1981, рядная 6 3.5 л, дорожная версия",
-      "price": 586872,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/bmw/m1/"
@@ -5744,12 +5283,10 @@
       "model": "Skyline GT-R R34 V-Spec",
       "title": "Nissan Skyline GT-R (R34) V-Spec",
       "subtitle": "1999–2000, RB26DETT 2.6 л битурбо, V-Spec I",
-      "price": 194547,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/nissan/skyline/r34/gt-r/v-spec-i/"
@@ -5772,12 +5309,10 @@
       "model": "Supra Turbo (A80)",
       "title": "Toyota Supra Twin Turbo (A80, US spec)",
       "subtitle": "1993–1998, 2JZ-GTE 3.0 л битурбо, американская версия",
-      "price": 107458,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/toyota/supra/4th-gen/twin-turbo-us-ca-spec/"
@@ -5800,12 +5335,10 @@
       "model": "RX-7 (FD)",
       "title": "Mazda RX-7 (FD, US base)",
       "subtitle": "1993–1995, роторный 13B 1.3 л битурбо",
-      "price": 40758,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/mazda/rx-7/3rd-gen/base-model/"
@@ -5828,12 +5361,10 @@
       "model": "NSX (NA1) Coupe",
       "title": "Acura NSX NA1 Coupe (1991–1994)",
       "subtitle": "1991–1994, V6 3.0 л, среднемоторное купе",
-      "price": 84843,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/acura/nsx/1st-gen/na1/coupe/"
@@ -5856,12 +5387,10 @@
       "model": "Countach LP400",
       "title": "Lamborghini Countach LP400 (1974–1978)",
       "subtitle": "1974–1978, V12 3.9 л, ранняя «перископная» версия",
-      "price": 891662,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/lamborghini/countach/lp400/"
@@ -5884,12 +5413,10 @@
       "model": "Diablo",
       "title": "Lamborghini Diablo (base model)",
       "subtitle": "1990–1998, V12 5.7 л, базовая заднеприводная версия",
-      "price": 315802,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/lamborghini/diablo/base-model/"
@@ -5911,12 +5438,10 @@
       "model": "Testarossa",
       "title": "Ferrari Testarossa (1984–1991)",
       "subtitle": "1984–1991, оппозитный 12 цилиндров 4.9 л",
-      "price": 178073,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/ferrari/testarossa/"
@@ -5938,12 +5463,10 @@
       "model": "DMC-12",
       "title": "DeLorean DMC-12 (manual)",
       "subtitle": "1981–1983, V6 2.85 л, кузов из нержавеющей стали",
-      "price": 63878,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/delorean/dmc-12/manual/"
@@ -5966,12 +5489,10 @@
       "model": "E-Type Series 1 Roadster",
       "title": "Jaguar E-Type Series 1 Roadster",
       "subtitle": "1962–1968, рядная 6 3.8/4.2 л, родстер",
-      "price": 120219,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/jaguar/e-type/series-1/roadster/"
@@ -5994,12 +5515,10 @@
       "model": "Delta HF Integrale Evo II",
       "title": "Lancia Delta HF Integrale Evoluzione II",
       "subtitle": "1993–1995, 2.0 л турбо, полный привод",
-      "price": 108892,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/lancia/delta/1st-gen/hf-integrale-evo-ii/"
@@ -6022,12 +5541,10 @@
       "model": "GT (2005–2006)",
       "title": "Ford GT (1st gen, 2005–2006)",
       "subtitle": "2005–2006, V8 5.4 л с компрессором",
-      "price": 485787,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/ford/gt/1st-gen/base-model/"
@@ -6050,12 +5567,10 @@
       "model": "GT (2017–2022)",
       "title": "Ford GT (2nd gen, base model)",
       "subtitle": "2017–2021, V6 3.5 л EcoBoost битурбо, карбон",
-      "price": 880901,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/ford/gt/2nd-gen/base-model/"
@@ -6078,12 +5593,10 @@
       "model": "LFA",
       "title": "Lexus LFA (base)",
       "subtitle": "2010–2012, V10 4.8 л, 560 л.с., 500 шт.",
-      "price": 880529,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/lexus/lfa/"
@@ -6105,12 +5618,10 @@
       "model": "Enzo",
       "title": "Ferrari Enzo (2002–2004)",
       "subtitle": "2002–2004, V12 6.0 л, 660 л.с.",
-      "price": 8093268,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/ferrari/enzo/"
@@ -6132,12 +5643,10 @@
       "model": "LaFerrari",
       "title": "Ferrari LaFerrari Coupe",
       "subtitle": "2013–2016, гибрид V12 6.3 л, 963 л.с.",
-      "price": 5104861,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/ferrari/laferrari/"
@@ -6159,12 +5668,10 @@
       "model": "F50",
       "title": "Ferrari F50 (1995–1997)",
       "subtitle": "1995–1997, V12 4.7 л, 520 л.с.",
-      "price": 8039743,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/ferrari/f50/"
@@ -6186,12 +5693,10 @@
       "model": "Miura P400 S",
       "title": "Lamborghini Miura P400 S",
       "subtitle": "1968–1971, V12 3.9 л поперечно, 370 л.с.",
-      "price": 2150532,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/lamborghini/miura/p400s/"
@@ -6213,12 +5718,10 @@
       "model": "Veyron 16.4",
       "title": "Bugatti Veyron EB 16.4",
       "subtitle": "2006–2011, W16 8.0 л, 4 турбины, 1001 л.с.",
-      "price": 1958258,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/bugatti/veyron/eb-164/"
@@ -6240,12 +5743,10 @@
       "model": "Z8 (E52)",
       "title": "BMW Z8 (2000–2003)",
       "subtitle": "2000–2003, V8 4.9 л S62, родстер",
-      "price": 205356,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/bmw/z8/"
@@ -6268,12 +5769,10 @@
       "model": "288 GTO",
       "title": "Ferrari 288 GTO (1984–1987)",
       "subtitle": "1984–1987, V8 2.9 л битурбо, 400 л.с.",
-      "price": 7799629,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/ferrari/288-gto/"
@@ -6295,12 +5794,10 @@
       "model": "750iL (E38)",
       "title": "BMW 750iL (E38)",
       "subtitle": "1995–2001, V12 5.4 л, удлинённый седан",
-      "price": 19200,
       "currency": "USD",
       "region": "US",
       "priceType": "used_market",
       "priceDate": "2026-10",
-      "note": "Типичная рыночная стоимость (CLASSIC.COM Market Benchmark) по продажам на аукционах, не MSRP; данные на октябрь 2026 г.",
       "source": {
         "label": "classic.com (CLASSIC.COM Market Benchmark)",
         "url": "https://www.classic.com/m/bmw/7-series/e38/750il/"
@@ -6323,12 +5820,10 @@
       "model": "Grandmaster Chime 6300A-010",
       "title": "Patek Philippe Grandmaster Chime Ref. 6300A-010 (Only Watch 2019)",
       "subtitle": "2019, единственный экземпляр в стали",
-      "price": 31000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2019-11-09",
-      "note": "Продан на благотворительном аукционе Only Watch (Christie's, Женева) в ноябре 2019 г.; мировой рекорд для наручных часов.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6352,12 +5847,10 @@
       "model": "Henry Graves Supercomplication",
       "title": "Patek Philippe Henry Graves Supercomplication pocket watch",
       "subtitle": "Золотые карманные часы, 24 усложнения",
-      "price": 23983000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2014-11-11",
-      "note": "Продан на аукционе Sotheby's в Женеве 11 ноября 2014 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6380,12 +5873,10 @@
       "model": "Paul Newman's Daytona 6239",
       "title": "Paul Newman's own Rolex Cosmograph Daytona Ref. 6239",
       "subtitle": "Сталь, личные часы актёра",
-      "price": 17753000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-10-26",
-      "note": "Личные часы Пола Ньюмана, проданы на аукционе Phillips в Нью-Йорке в октябре 2017 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6409,12 +5900,10 @@
       "model": "Ref. 1518 Stainless Steel",
       "title": "Patek Philippe Ref. 1518 perpetual calendar chronograph in stainless steel",
       "subtitle": "Сталь, вечный календарь + хронограф",
-      "price": 11137000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2016-11-12",
-      "note": "Продан на аукционе Phillips в Женеве в ноябре 2016 г., цена с комиссией.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6443,12 +5932,10 @@
       "model": "\"Bao Dai\" Ref. 6062",
       "title": "Rolex Ref. 6062 \"Bao Dai\" triple calendar moonphase",
       "subtitle": "Тройной календарь с фазой Луны, часы императора Вьетнама",
-      "price": 5060000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-05-13",
-      "note": "Часы последнего императора Вьетнама Бао Дая, проданы на аукционе Phillips в Женеве в мае 2017 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6472,12 +5959,10 @@
       "model": "Marlon Brando's GMT-Master 1675",
       "title": "Marlon Brando's Rolex GMT-Master Ref. 1675 (worn in Apocalypse Now)",
       "subtitle": "Сталь, часы из фильма «Апокалипсис сегодня»",
-      "price": 1952000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2019-12",
-      "note": "Личные часы Марлона Брандо, проданы на аукционе Phillips в Нью-Йорке в 2019 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6506,12 +5991,10 @@
       "model": "Nautilus 5711/1A-018 Tiffany",
       "title": "Patek Philippe Nautilus Ref. 5711/1A-018 Tiffany & Co. blue dial",
       "subtitle": "2021, сталь, циферблат цвета Tiffany Blue, лимитированная серия",
-      "price": 6503000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-12-11",
-      "note": "Первый экземпляр серии продан на благотворительном аукционе Phillips в Нью-Йорке в декабре 2021 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6541,12 +6024,10 @@
       "model": "Steve McQueen's Monaco 1133",
       "title": "Heuer Monaco Ref. 1133 worn by Steve McQueen in Le Mans",
       "subtitle": "1970, сталь, часы со съёмок фильма «Ле-Ман»",
-      "price": 2208000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2020-12-12",
-      "note": "Часы, которые Стив Маккуин носил на съёмках «Ле-Мана», проданы на аукционе Phillips в Нью-Йорке в декабре 2020 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6570,12 +6051,10 @@
       "model": "Speedmaster \"Broad Arrow\" 2915-1",
       "title": "Omega Speedmaster CK2915-1 \"Broad Arrow\" (1957)",
       "subtitle": "1957, сталь, первое поколение Speedmaster",
-      "price": 3418000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-11",
-      "note": "Продан на аукционе Phillips в Женеве в ноябре 2021 г.; рекорд для Omega.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6605,12 +6084,10 @@
       "model": "Eric Clapton's Ref. 2499/100",
       "title": "Patek Philippe Ref. 2499/100 platinum perpetual calendar chronograph (Eric Clapton)",
       "subtitle": "1987, платина, вечный календарь + хронограф",
-      "price": 3656000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2012-11-12",
-      "note": "Платиновые часы из коллекции Эрика Клэптона, проданы на аукционе Christie's в Женеве в ноябре 2012 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6633,12 +6110,10 @@
       "model": "Deep Sea Special No. 1",
       "title": "Rolex Deep Sea Special No. 1 (Trieste bathyscaphe prototype)",
       "subtitle": "1953, экспериментальные часы для батискафа «Триест»",
-      "price": 2066000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-11-08",
-      "note": "Первый экспериментальный образец, проданный на аукционе Christie's в Женеве в ноябре 2021 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6661,12 +6136,10 @@
       "model": "David Scott's Apollo 15 Chronograph",
       "title": "Bulova chronograph worn by David Scott on the Moon (Apollo 15)",
       "subtitle": "1971, хронограф, носившийся на поверхности Луны",
-      "price": 1652000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2015-10-22",
-      "note": "Часы астронавта Дэвида Скотта, в которых он работал на поверхности Луны; проданы RR Auction в октябре 2015 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6690,12 +6163,10 @@
       "model": "FFC Blue (Only Watch)",
       "title": "F.P. Journe FFC Blue prototype (with Francis Ford Coppola)",
       "subtitle": "2021, уникальный прототип для Only Watch",
-      "price": 4934000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2021-11-06",
-      "note": "Уникальный прототип, созданный вместе с Фрэнсисом Фордом Копполой, продан на Only Watch (Christie's, Женева) в ноябре 2021 г.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive watches sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_watches_sold_at_auction"
@@ -6719,12 +6190,10 @@
       "model": "CTF Pink Star 59.60 ct",
       "title": "CTF Pink Star diamond, 59.60 carats",
       "subtitle": "59,60 карат, fancy vivid pink, огранка овал",
-      "price": 71200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-04-04",
-      "note": "Продан на аукционе Sotheby's в Гонконге 4 апреля 2017 г.; рекорд для драгоценного камня на аукционе.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Pink_Star_(diamond)"
@@ -6749,12 +6218,10 @@
       "model": "Oppenheimer Blue 14.62 ct",
       "title": "Oppenheimer Blue diamond, 14.62 carats",
       "subtitle": "14,62 карата, fancy vivid blue",
-      "price": 57500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2016-05",
-      "note": "Продан на аукционе Christie's в Женеве в мае 2016 г. (56,8 млн швейцарских франков).",
       "source": {
         "label": "langerman-diamonds.com",
         "url": "https://www.langerman-diamonds.com/blogs/news/oppenheimer-blue-diamond-sells-for-57-5-million-at-christie-s"
@@ -6777,12 +6244,10 @@
       "model": "Blue Moon of Josephine 12.03 ct",
       "title": "Blue Moon of Josephine diamond, 12.03 carats",
       "subtitle": "12,03 карата, fancy vivid blue, огранка кушон",
-      "price": 48400000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2015-11",
-      "note": "Продан на аукционе Sotheby's в Женеве в ноябре 2015 г.; покупатель — гонконгский магнат Джозеф Лау.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Blue_Moon_of_Josephine"
@@ -6805,12 +6270,10 @@
       "model": "Graff Pink 24.78 ct",
       "title": "The Graff Pink diamond, 24.78 carats",
       "subtitle": "24,78 карата, fancy intense pink",
-      "price": 46200000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2010-11-16",
-      "note": "Продан на аукционе Sotheby's в Женеве в ноябре 2010 г. ювелиру Лоренсу Граффу.",
       "source": {
         "label": "aol.com",
         "url": "https://www.aol.com/2010-11-16-pink-diamond-is-sold-for-a-record-46-2-million.html"
@@ -6833,12 +6296,10 @@
       "model": "Winston Pink Legacy 18.96 ct",
       "title": "Winston Pink Legacy diamond, 18.96 carats",
       "subtitle": "18,96 карата, fancy vivid pink, ранее собственность Оппенгеймеров",
-      "price": 50400000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2018-11-13",
-      "note": "Продан на аукционе Christie's в Женеве в ноябре 2018 г.; покупатель — Harry Winston.",
       "source": {
         "label": "nationaljeweler.com",
         "url": "https://www.nationaljeweler.com/fashion/jewelry-auctions/7184-harry-winston-just-acquired-the-pink-legacy-for-50-million"
@@ -6861,12 +6322,10 @@
       "model": "Williamson Pink Star 11.15 ct",
       "title": "Williamson Pink Star diamond, 11.15 carats",
       "subtitle": "11,15 карата, fancy vivid pink, internally flawless",
-      "price": 57700000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-10-07",
-      "note": "Продан на аукционе Sotheby's в Гонконге в октябре 2022 г.; рекорд цены за карат для любого камня.",
       "source": {
         "label": "nationaljeweler.com",
         "url": "https://www.nationaljeweler.com/articles/11348-williamson-pink-star-diamond-sets-auction-record-at-57-7m"
@@ -6889,12 +6348,10 @@
       "model": "La Peregrina pearl (Elizabeth Taylor)",
       "title": "La Peregrina pearl necklace from the collection of Elizabeth Taylor",
       "subtitle": "XVI в., натуральная жемчужина в колье Cartier, коллекция Элизабет Тейлор",
-      "price": 11840000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2011-12",
-      "note": "Продана на аукционе Christie's в Нью-Йорке в декабре 2011 г. в составе коллекции Элизабет Тейлор; рекорд для жемчуга.",
       "source": {
         "label": "superyachts.com",
         "url": "https://www.superyachts.com/lifestyle/story/elizabeth-taylor-pearl-sells-for-record-dollar118-million-at-auction-1079"
@@ -6918,12 +6375,10 @@
       "model": "Taylor–Burton Diamond (1969)",
       "title": "Taylor–Burton Diamond, 69.42 carats, 1969 auction",
       "subtitle": "69,42 карата, грушевидная огранка; аукцион 1969 г.",
-      "price": 1050000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "1969-10-23",
-      "note": "Продан на аукционе Parke-Bernet в Нью-Йорке 23 октября 1969 г. компании Cartier; на следующий день его выкупил Ричард Бёртон для Элизабет Тейлор.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Taylor%E2%80%93Burton_Diamond"
@@ -6946,12 +6401,10 @@
       "model": "Elizabeth Taylor Diamond 33.19 ct",
       "title": "The Elizabeth Taylor Diamond (formerly Krupp Diamond), 33.19 carats",
       "subtitle": "33,19 карата, кольцо, подарок Ричарда Бёртона",
-      "price": 8818500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2011-12-13",
-      "note": "Продан на аукционе Christie's в Нью-Йорке 13 декабря 2011 г., цена с комиссией покупателя.",
       "source": {
         "label": "komonews.com (AP)",
         "url": "https://komonews.com/news/entertainment/taylors-ring-from-burton-fetches-88m-in-ny"
@@ -6974,12 +6427,10 @@
       "model": "Nautilus 5811/1G-001",
       "title": "Patek Philippe Nautilus Ref. 5811/1G-001 white gold",
       "subtitle": "41 мм, белое золото, автомат 26-330 S C",
-      "price": 82021,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "patek.com",
         "url": "https://www.patek.com/en/collection/nautilus/5811-1g-001"
@@ -7002,12 +6453,10 @@
       "model": "Aquanaut 5168G-001",
       "title": "Patek Philippe Aquanaut Ref. 5168G-001 white gold",
       "subtitle": "42,2 мм, белое золото, синий циферблат, автомат",
-      "price": 57890,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "patek.com",
         "url": "https://www.patek.com/en/collection/aquanaut/5168g-001"
@@ -7030,12 +6479,10 @@
       "model": "Calatrava 6119R-001",
       "title": "Patek Philippe Calatrava Ref. 6119R-001 rose gold",
       "subtitle": "39 мм, розовое золото, ручной завод 30-255 PS",
-      "price": 37510,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "patek.com",
         "url": "https://www.patek.com/en/collection/calatrava/6119r-001"
@@ -7058,12 +6505,10 @@
       "model": "Lange 1 (191.032)",
       "title": "A. Lange & Söhne Lange 1 Ref. 191.032, pink gold",
       "subtitle": "38,5 мм, розовое золото, ручной завод L121.1",
-      "price": 49500,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "alange-soehne.com",
         "url": "https://www.alange-soehne.com/us-en/timepieces/lange-1/lange-1/lange-1-in-750-pink-gold-191-032"
@@ -7086,12 +6531,10 @@
       "model": "SBGA211 \"Snowflake\"",
       "title": "Grand Seiko SBGA211 \"Snowflake\" Spring Drive",
       "subtitle": "41 мм, титан, Spring Drive 9R65",
-      "price": 6900,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "grand-seiko.com",
         "url": "https://www.grand-seiko.com/us-en/collections/sbga211g"
@@ -7114,12 +6557,10 @@
       "model": "Constellation 41 mm",
       "title": "Omega Constellation Co-Axial Master Chronometer 41 mm 131.33.41.21.03.001",
       "subtitle": "41 мм, сталь, синий циферблат, калибр 8900",
-      "price": 8000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "omegawatches.com",
         "url": "https://www.omegawatches.com/en-us/watch-omega-constellation-co-axial-master-chronometer-41-mm-13133412103001"
@@ -7142,12 +6583,10 @@
       "model": "Navitimer B01 Chronograph 43",
       "title": "Breitling Navitimer B01 Chronograph 43 AB0138211B1P1",
       "subtitle": "43 мм, сталь, чёрный циферблат, калибр B01",
-      "price": 10300,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "breitling.com",
         "url": "https://www.breitling.com/us-en/watches/navitimer/navitimer-b01-chronograph-43-my22/AB0138211B1P1/"
@@ -7170,12 +6609,10 @@
       "model": "Big Pilot's Tourbillon Le Petit Prince",
       "title": "IWC Big Pilot's Watch 43 Tourbillon Le Petit Prince IW329501, platinum",
       "subtitle": "43 мм, платина, турбийон, калибр 82905",
-      "price": 99400,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "iwc.com",
         "url": "https://www.iwc.com/us-en/watches/pilot-watches/iw329501-big-pilots-watch-43-tourbillon-le-petit-prince"
@@ -7198,12 +6635,10 @@
       "model": "Reverso Tribute Duoface",
       "title": "Jaeger-LeCoultre Reverso Tribute Duoface Small Seconds Q3988481",
       "subtitle": "47×28,3 мм, сталь, два циферблата, ручной завод 854",
-      "price": 15600,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "jaeger-lecoultre.com",
         "url": "https://www.jaeger-lecoultre.com/us-en/watches/reverso/reverso-tribute/reverso-tribute-duoface-small-seconds-q3988481"
@@ -7226,12 +6661,10 @@
       "model": "Monaco Chronograph 39 mm",
       "title": "TAG Heuer Monaco Chronograph CBL2111.FC6453 (TH20-00)",
       "subtitle": "39 мм, сталь, синий циферблат, калибр TH20-00",
-      "price": 8300,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "tagheuer.com",
         "url": "https://www.tagheuer.com/us/en/timepieces/collections/tag-heuer-monaco/39-mm-th20-00/CBL2111.FC6453.html"
@@ -7254,12 +6687,10 @@
       "model": "Day-Date 40 Platinum",
       "title": "Rolex Day-Date 40 m228236-0012, platinum, ice-blue dial",
       "subtitle": "40 мм, платина 950, ледяной голубой циферблат, калибр 3255",
-      "price": 68800,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "rolex.com",
         "url": "https://www.rolex.com/en-us/watches/day-date/m228236-0012"
@@ -7284,12 +6715,10 @@
       "model": "Serpenti Viper bracelet",
       "title": "Bvlgari Serpenti Viper bracelet, yellow gold, demi-pavé diamonds",
       "subtitle": "18К жёлтое золото, бриллианты демипаве",
-      "price": 13700,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "bulgari.com",
         "url": "https://www.bulgari.com/en-us/jewelry/bracelets/serpenti-viper-bracelet-yellow-gold-diamonds-br860040"
@@ -7313,12 +6742,10 @@
       "model": "Tiffany Lock bangle",
       "title": "Tiffany Lock Bangle in Yellow Gold with Diamond Accents",
       "subtitle": "18К жёлтое золото, бриллианты 0,31 карата",
-      "price": 13000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "tiffany.com",
         "url": "https://www.tiffany.com/jewelry/bracelets/tiffany-lock-18k-yellow-gold-diamond-bracelets-1366151844.html"
@@ -7341,12 +6768,10 @@
       "model": "Vintage Alhambra long necklace, 20 motifs",
       "title": "Van Cleef & Arpels Vintage Alhambra long necklace, 20 motifs, white gold",
       "subtitle": "18К белое золото, 20 мотивов-клеверов",
-      "price": 28400,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10",
-      "note": "Официальная розничная цена на американском сайте бренда (октябрь 2026 г., без налогов).",
       "source": {
         "label": "vancleefarpels.com",
         "url": "https://www.vancleefarpels.com/us/en/collections/jewelry/alhambra.html"
@@ -7370,12 +6795,10 @@
       "model": "V-Raptor XL 8K VV",
       "title": "RED V-Raptor XL 8K VV",
       "subtitle": "2022, кинокамера 8K VV, полнокадровый сенсор, корпус XL",
-      "price": 39500,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2022-08",
-      "note": "Цена базовой камеры (без комплекта Production Pack) при открытии предзаказа в августе 2022 г.",
       "source": {
         "label": "newsshooter.com",
         "url": "https://www.newsshooter.com/2022/08/02/red-v-raptor-xl-8k-vv-announced/"
@@ -7398,12 +6821,10 @@
       "model": "URSA Cine 12K LF",
       "title": "Blackmagic URSA Cine 12K LF (body)",
       "subtitle": "2025, кинокамера 12K, сенсор LF, корпус с байонетом EF",
-      "price": 6995,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-01-30",
-      "note": "Цена корпуса камеры (EF) по официальному объявлению Blackmagic в январе 2025 г.",
       "source": {
         "label": "newsshooter.com",
         "url": "https://www.newsshooter.com/2025/01/30/blackmagic-ursa-cine-12k-lf-body-6995-usd/"
@@ -7425,12 +6846,10 @@
       "model": "EOS R1",
       "title": "Canon EOS R1 (body)",
       "subtitle": "2024, флагманская беззеркалка, 24 Мп, только корпус",
-      "price": 6299,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024-07-17",
-      "note": "Рекомендованная цена корпуса в США на момент анонса в июле 2024 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Canon-EOS-R1-and-R5-Mark-II-mirrorless-cameras-officially-launched-starting-at-6-299-and-4-299-respectively.864416.0.html"
@@ -7452,12 +6871,10 @@
       "model": "EOS R5 Mark II",
       "title": "Canon EOS R5 Mark II (body)",
       "subtitle": "2024, беззеркалка 45 Мп, видео 8K, только корпус",
-      "price": 4299,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024-07-17",
-      "note": "Рекомендованная цена корпуса в США на момент анонса в июле 2024 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Canon-EOS-R1-and-R5-Mark-II-mirrorless-cameras-officially-launched-starting-at-6-299-and-4-299-respectively.864416.0.html"
@@ -7480,12 +6897,10 @@
       "model": "EOS C400",
       "title": "Canon EOS C400",
       "subtitle": "2024, кинокамера 6K, полный кадр, байонет RF",
-      "price": 7999,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024-06-05",
-      "note": "Ориентировочная розничная цена в США из пресс-релиза Canon (июнь 2024 г.).",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Canon-unveils-35mm-full-frame-EOS-C400-camera-for-filmmakers-with-6K-60P-recording-extended-102-400-ISO-AI-autofocus-and-IP-streaming.845031.0.html"
@@ -7507,12 +6922,10 @@
       "model": "Z9",
       "title": "Nikon Z9 (body)",
       "subtitle": "2021, флагманская беззеркалка 45,7 Мп, только корпус",
-      "price": 5500,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2021-10",
-      "note": "Стартовая цена корпуса в США на момент выхода (по данным Википедии).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Nikon_Z9"
@@ -7534,12 +6947,10 @@
       "model": "X2D II 100C",
       "title": "Hasselblad X2D II 100C (body)",
       "subtitle": "2025, среднеформатная камера 100 Мп, корпус",
-      "price": 7399,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-08-26",
-      "note": "Цена корпуса в США на момент анонса в августе 2025 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Hasselblad-X2D-II-100C-launches-with-HDR-RAW-AF-C-and-lighter-body-alongside-new-35-100mm-zoom-lens.1097071.0.html"
@@ -7561,12 +6972,10 @@
       "model": "GFX100 II",
       "title": "Fujifilm GFX100 II",
       "subtitle": "2023, среднеформатная беззеркалка 102 Мп",
-      "price": 7499,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023-09-12",
-      "note": "Цена в США, объявленная при анонсе на Fujifilm X Summit в сентябре 2023 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Fujifilm-launches-GFX100-II-flagship-medium-format-camera-with-improved-sensor-AF-IBIS-and-25-lower-price-than-original.748794.0.html"
@@ -7588,12 +6997,10 @@
       "model": "M11",
       "title": "Leica M11",
       "subtitle": "2022, цифровой дальномер, 60 Мп, корпус",
-      "price": 8995,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2022-01-13",
-      "note": "Розничная цена в США на момент анонса в январе 2022 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/The-Leica-M11-arrives-with-a-60-MP-sensor-an-electronic-shutter-and-USB-Type-C-for-US-8-995.592582.0.html"
@@ -7615,12 +7022,10 @@
       "model": "XF IQ4 150MP",
       "title": "Phase One XF IQ4 150MP Camera System",
       "subtitle": "2018, среднеформатная система, цифровой задник 151 Мп",
-      "price": 51990,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2018-08-28",
-      "note": "Рекомендованная цена системы (камера XF + задник IQ4 150MP) в США на момент анонса.",
       "source": {
         "label": "shutterbug.com",
         "url": "https://www.shutterbug.com/node/577360"
@@ -7643,12 +7048,10 @@
       "model": "Ronin 4D-8K",
       "title": "DJI Ronin 4D-8K",
       "subtitle": "2023, кинокамера 8K со встроенным 4-осевым стабилизатором и лидаром",
-      "price": 12838,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023-12-16",
-      "note": "Цена версии Ronin 4D-8K до налогов на момент выхода в декабре 2023 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/DJI-Ronin-4D-8K-debuts-with-new-Zenmuse-X9-8K-camera.784418.0.html"
@@ -7671,12 +7074,10 @@
       "model": "Inspire 3",
       "title": "DJI Inspire 3",
       "subtitle": "2023, кинодрон с камерой Zenmuse X9-8K Air",
-      "price": 16499,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023-05-30",
-      "note": "Цена при старте мировых продаж в мае 2023 г. (сайт DJI и авторизованные продавцы).",
       "source": {
         "label": "amateurphotographer.com",
         "url": "https://amateurphotographer.com/latest/photo-news/dji-inspire-3-on-sale-globally"
@@ -7698,12 +7099,10 @@
       "model": "PXW-Z200",
       "title": "Sony PXW-Z200 camcorder",
       "subtitle": "2024, проф. видеокамера 4K 120p, зум 24–480 мм",
-      "price": 3999.99,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024-09-12",
-      "note": "Рекомендованная цена в США на момент анонса в сентябре 2024 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Sony-unveils-HXR-NX800-and-PXW-Z200-professional-camcorders-with-4K-120fps-24-480mm-zoom-AI-autofocus-live-streaming-and-auto-subject-framing.886833.0.html"
@@ -7725,12 +7124,10 @@
       "model": "GeForce RTX 5090",
       "title": "NVIDIA GeForce RTX 5090 Founders Edition",
       "subtitle": "2025, видеокарта, 32 ГБ GDDR7, Blackwell",
-      "price": 1999,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-01-23",
-      "note": "Рекомендованная цена (MSRP) на старте продаж в январе 2025 г.",
       "source": {
         "label": "hothardware.com",
         "url": "https://hothardware.com/reviews/nvidia-geforce-rtx-5090-review"
@@ -7753,12 +7150,10 @@
       "model": "DGX Spark",
       "title": "NVIDIA DGX Spark",
       "subtitle": "2025, настольный ИИ-суперкомпьютер, GB10, 128 ГБ памяти",
-      "price": 3999,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-10-15",
-      "note": "Цена NVIDIA без налогов и пошлин на старте продаж 15 октября 2025 г.",
       "source": {
         "label": "tech.yahoo.com",
         "url": "https://tech.yahoo.com/computing/articles/nvidia-start-selling-3-999-223000329.html"
@@ -7780,12 +7175,10 @@
       "model": "Jetson AGX Thor Dev Kit",
       "title": "NVIDIA Jetson AGX Thor Developer Kit",
       "subtitle": "2025, «мозг» для роботов, 2070 TFLOPS, Blackwell",
-      "price": 3499,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-08-25",
-      "note": "Цена комплекта разработчика на старте в августе 2025 г.",
       "source": {
         "label": "hothardware.com",
         "url": "https://hothardware.com/reviews/nvidia-jetson-agx-thor-developer-kit-hands-on"
@@ -7807,12 +7200,10 @@
       "model": "Ryzen AI Halo",
       "title": "AMD Ryzen AI Halo developer workstation",
       "subtitle": "2026, мини-станция для ИИ, Ryzen AI Max+ 395, 128 ГБ",
-      "price": 3999,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-07-06",
-      "note": "Рекомендованная цена (MSRP) по обзору HotHardware в июле 2026 г.",
       "source": {
         "label": "hothardware.com",
         "url": "https://hothardware.com/reviews/amd-ryzen-ai-halo-hands-on-review"
@@ -7834,12 +7225,10 @@
       "model": "Mac Pro (M2 Ultra)",
       "title": "Apple Mac Pro Tower (M2 Ultra)",
       "subtitle": "2023, башня с M2 Ultra и слотами PCIe; снят с производства в 2026",
-      "price": 6999,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023-06",
-      "note": "Стартовая цена Mac Pro в корпусе Tower; в марте 2026 г. Apple сняла модель с продажи.",
       "source": {
         "label": "macworld.com",
         "url": "https://www.macworld.com/article/347010/new-mac-pro-2023.html"
@@ -7861,12 +7250,10 @@
       "model": "Studio Display XDR",
       "title": "Apple Studio Display XDR (nano-texture, height-adjustable stand)",
       "subtitle": "Монитор, нанотекстурное стекло, подставка с регулировкой высоты",
-      "price": 3599,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-10-16",
-      "note": "Текущая цена в американском Apple Store для версии с нанотекстурой и регулируемой подставкой.",
       "source": {
         "label": "apple.com",
         "url": "https://www.apple.com/shop/product/MWPE2LL/A"
@@ -7888,12 +7275,10 @@
       "model": "Vision Pro (M5)",
       "title": "Apple Vision Pro (M5, 256GB)",
       "subtitle": "2025, гарнитура смешанной реальности, чип M5, 256 ГБ",
-      "price": 3500,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-10-22",
-      "note": "Стартовая цена при выходе обновлённой версии с M5 в октябре 2025 г. (по данным Road to VR).",
       "source": {
         "label": "roadtovr.com",
         "url": "https://roadtovr.com/apple-vision-pro-m5-chip-october-22-launch/"
@@ -7916,12 +7301,10 @@
       "model": "Steam Deck OLED 1TB",
       "title": "Valve Steam Deck OLED 1TB",
       "subtitle": "Портативная консоль, OLED 7,4″, 1 ТБ; цена после повышения 2026",
-      "price": 949,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-05-28",
-      "note": "Цена в США после повышения цен Valve в мае 2026 г. (до налогов).",
       "source": {
         "label": "hothardware.com",
         "url": "https://hothardware.com/news/valve-hikes-steam-deck-pricing"
@@ -7943,12 +7326,10 @@
       "model": "Z8 Fury G5 (4× RTX A6000)",
       "title": "HP Z8 Fury G5 workstation (Xeon w9-3495X, 4x RTX A6000)",
       "subtitle": "2023, рабочая станция: Xeon 56 ядер, 4× RTX A6000, 128 ГБ",
-      "price": 24378,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023-06-21",
-      "note": "Цена тестовой конфигурации по обзору HotHardware в июне 2023 г.",
       "source": {
         "label": "hothardware.com",
         "url": "https://hothardware.com/reviews/hp-z8-fury-g5-workstation-review"
@@ -7970,12 +7351,10 @@
       "model": "Area-51 (RTX 5090)",
       "title": "Alienware Area-51 gaming desktop (2025, Core Ultra 9 285K, RTX 5090)",
       "subtitle": "2025, игровой ПК: Core Ultra 9 285K, RTX 5090, 64 ГБ",
-      "price": 5699,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-05-13",
-      "note": "Цена тестовой конфигурации с RTX 5090 по обзору HotHardware в мае 2025 г.",
       "source": {
         "label": "hothardware.com",
         "url": "https://hothardware.com/reviews/alienware-area-51-2025-review"
@@ -7997,12 +7376,10 @@
       "model": "Omen Max 45L (RTX 5090)",
       "title": "HP Omen Max 45L gaming desktop (Ryzen 9 9900X3D, RTX 5090)",
       "subtitle": "2026, игровой ПК: Ryzen 9 9900X3D, RTX 5090, 64 ГБ",
-      "price": 6894,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-04-30",
-      "note": "Цена тестовой конфигурации по обзору HotHardware в апреле 2026 г.",
       "source": {
         "label": "hothardware.com",
         "url": "https://hothardware.com/reviews/hp-omen-max-45l-gaming-desktop-review-fire-and-forget"
@@ -8024,12 +7401,10 @@
       "model": "Spot",
       "title": "Boston Dynamics Spot (base)",
       "subtitle": "Робот-собака для промышленности, базовая версия",
-      "price": 74500,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2020-06-16",
-      "note": "Базовая цена при открытии продаж для коммерческих клиентов в июне 2020 г.",
       "source": {
         "label": "bostonglobe.com",
         "url": "https://www.bostonglobe.com/2020/06/16/business/boston-dynamics-turns-spot-robot-loose"
@@ -8052,12 +7427,10 @@
       "model": "G1",
       "title": "Unitree G1 humanoid robot",
       "subtitle": "2024, человекоподобный робот ~130 см, базовая версия",
-      "price": 16000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024-08-19",
-      "note": "Цена серийной версии на момент запуска производства в августе 2024 г.",
       "source": {
         "label": "maginative.com",
         "url": "https://www.maginative.com/article/unitree-launches-production-version-of-g1-humanoid-robot/"
@@ -8079,12 +7452,10 @@
       "model": "H1",
       "title": "Unitree H1 humanoid robot",
       "subtitle": "Полноразмерный человекоподобный робот ~180 см",
-      "price": 90000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024-05",
-      "note": "Стартовая цена, указанная heise в мае 2024 г. («от 90 000 долларов»).",
       "source": {
         "label": "heise.de",
         "url": "https://heise.de/-9720187"
@@ -8106,12 +7477,10 @@
       "model": "R1",
       "title": "Unitree R1 humanoid robot",
       "subtitle": "2025, компактный гуманоид для потребителей",
-      "price": 5900,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-07-26",
-      "note": "Стартовая цена при анонсе в июле 2025 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Humanoid-robot-for-consumers-Unitree-R1-launches-starting-at-US-5-900.1069005.0.html"
@@ -8133,12 +7502,10 @@
       "model": "NEO",
       "title": "1X NEO home humanoid robot",
       "subtitle": "2025, домашний человекоподобный робот, поставки с 2026",
-      "price": 20000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-10-28",
-      "note": "Цена разовой покупки при открытии предзаказов в октябре 2025 г. (есть и подписка).",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/1X-opens-pre-orders-for-20-000-NEO-humanoid-home-robot.1149203.0.html"
@@ -8161,12 +7528,10 @@
       "model": "aibo First Litter Edition",
       "title": "Sony aibo ERS-1000 First Litter Edition (US)",
       "subtitle": "2018, робот-собака, лимитированная серия для США",
-      "price": 2899.99,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2018-09-18",
-      "note": "Рекомендованная цена лимитированной серии при старте продаж в США.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Limited-First-Litter-edition-of-Sony-s-robotic-dog-aibo-released-in-US.333218.0.html"
@@ -8189,12 +7554,10 @@
       "model": "Moflin",
       "title": "Casio Moflin AI pet robot",
       "subtitle": "2025, пушистый робот-питомец с ИИ",
-      "price": 429,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-09-18",
-      "note": "Цена в США при выходе на американский рынок в сентябре 2025 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Casio-brings-its-Moflin-furry-robot-to-more-markets-including-the-US-for-429.1117319.0.html"
@@ -8216,12 +7579,10 @@
       "model": "Tennis Robot",
       "title": "Acemate AI Tennis Robot",
       "subtitle": "2025, ИИ-робот для тенниса: подаёт и отбивает мячи",
-      "price": 2499,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-09-05",
-      "note": "Рекомендованная розничная цена (без скидки раннего предзаказа).",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Acemate-unveils-AI-powered-Tennis-Robot-An-NTRP-1-0-to-6-0-rally-and-serve-partner.1105604.0.html"
@@ -8243,12 +7604,10 @@
       "model": "X Ultra",
       "title": "Hypershell X Ultra exoskeleton",
       "subtitle": "2025, экзоскелет для походов, запас хода 30 км",
-      "price": 1999,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-09-09",
-      "note": "Цена при старте заказов в сентябре 2025 г.",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Hypershell-X-Ultra-exoskeleton-for-outdoor-adventures-launches-with-more-power-and-30-km-range.1108972.0.html"
@@ -8270,12 +7629,10 @@
       "model": "Even G2",
       "title": "Even Realities Even G2 smart glasses",
       "subtitle": "2026, умные очки с micro-LED дисплеем 1200 нит",
-      "price": 599,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-04-08",
-      "note": "Цена очков без аксессуаров (диоптрии и кольцо R1 продаются отдельно).",
       "source": {
         "label": "notebookcheck.net",
         "url": "https://www.notebookcheck.net/Even-G2-Smart-Glasses-with-1-200-nits-micro-LED-display-now-available.1269318.0.html"
@@ -8297,12 +7654,10 @@
       "model": "H2D",
       "title": "Bambu Lab H2D 3D printer",
       "subtitle": "2025, 3D-принтер с двумя экструдерами",
-      "price": 1899,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-03-25",
-      "note": "Цена базовой версии в США на момент анонса в марте 2025 г.",
       "source": {
         "label": "3dprintingindustry.com",
         "url": "https://3dprintingindustry.com/news/bambu-labs-new-h2d-3d-printer-technical-specifications-and-pricing-237763/"
@@ -8324,12 +7679,10 @@
       "model": "Farnsworth House",
       "title": "Farnsworth House (Plano, Illinois)",
       "subtitle": "1951, стекло и сталь, Мис ван дер Роэ; аукцион 2003",
-      "price": 7500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2003-12",
-      "note": "Продан на аукционе Sotheby's в 2003 г. (ставка $6,7 млн + комиссия $0,8 млн); покупатели — National Trust for Historic Preservation и Landmarks Illinois.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Farnsworth_House"
@@ -8352,12 +7705,10 @@
       "model": "Flatiron Building",
       "title": "Flatiron Building (New York)",
       "subtitle": "1902, 22 этажа, Манхэттен; повторный аукцион 2023",
-      "price": 161000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-05-23",
-      "note": "Выигрышная ставка на повторном аукционе в мае 2023 г.: контроль над зданием получила группа совладельцев (первый победитель торгов не внёс оплату).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Flatiron_Building"
@@ -8381,12 +7732,10 @@
       "model": "220 CPS, кондо Гриффина",
       "title": "Ken Griffin's condo at 220 Central Park South",
       "subtitle": "2019, четырёхэтажная квартира, Манхэттен",
-      "price": 238000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2019-01",
-      "note": "Сделка закрыта в январе 2019 г.; на тот момент — самая дорогая покупка жилья в США.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/220_Central_Park_South"
@@ -8410,12 +7759,10 @@
       "model": "The One",
       "title": "The One (Bel Air, Los Angeles)",
       "subtitle": "105 000 кв. футов, особняк Ниями; аукцион 2022",
-      "price": 141000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-03",
-      "note": "Продан на банкротном аукционе в марте 2022 г. CEO Fashion Nova Ричарду Сагиану: ставка $126 млн плюс 12% комиссии.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/The_One_(Los_Angeles)"
@@ -8438,12 +7785,10 @@
       "model": "Playboy Mansion",
       "title": "Playboy Mansion (Holmby Hills)",
       "subtitle": "1927, Холмби-Хиллз, Лос-Анджелес; продажа 2016",
-      "price": 100000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2016-08",
-      "note": "Куплен Дареном Метропулосом в августе 2016 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Playboy_Mansion"
@@ -8466,12 +7811,10 @@
       "model": "Neverland Ranch",
       "title": "Neverland Ranch (Santa Barbara County)",
       "subtitle": "2700 акров, бывшее ранчо Майкла Джексона; продажа 2020",
-      "price": 22000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2020-12",
-      "note": "Куплено миллиардером Роном Беркле в декабре 2020 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Neverland_Ranch"
@@ -8495,12 +7838,10 @@
       "model": "Остров Ланаи (98%)",
       "title": "Lanai island (98% stake)",
       "subtitle": "Гавайи, 98% острова у Castle & Cooke; 2012",
-      "price": 300000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2012-06",
-      "note": "В июне 2012 г. Ларри Эллисон купил долю 98% острова у Castle & Cooke.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Lanai"
@@ -8524,12 +7865,10 @@
       "model": "The Plaza Hotel",
       "title": "The Plaza Hotel (1907 building), construction",
       "subtitle": "1907, 19 этажей, Пятая авеню, Нью-Йорк",
-      "price": 12500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1907",
-      "note": "Итоговая стоимость строительства нынешнего здания отеля (открыт в 1907 г.).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Plaza_Hotel"
@@ -8552,12 +7891,10 @@
       "model": "Château Louis XIV",
       "title": "Château Louis XIV (Louveciennes)",
       "subtitle": "2008–2011, Лувесьенн, Франция; продажа 2015",
-      "price": 301000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2015",
-      "note": "В 2015 г. куплен наследным принцем Саудовской Аравии Мухаммедом бин Сальманом.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Ch%C3%A2teau_Louis_XIV"
@@ -8580,12 +7917,10 @@
       "model": "The Manor (Spelling Manor)",
       "title": "Spelling Manor (Holmby Hills)",
       "subtitle": "1988, ~56 000 кв. футов, Холмби-Хиллз; 2019",
-      "price": 120000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2019-07",
-      "note": "Продан в июле 2019 г. анонимному покупателю — рекорд Калифорнии на тот момент.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Spelling_Manor"
@@ -8608,12 +7943,10 @@
       "model": "Ennis House",
       "title": "Ennis House (Los Angeles)",
       "subtitle": "1924, текстильные блоки, Ф. Л. Райт; продажа 2019",
-      "price": 18000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2019-10",
-      "note": "Продан Роном Беркле в октябре 2019 г.; на тот момент — рекордная цена за дом Райта.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Ennis_House"
@@ -8636,12 +7969,10 @@
       "model": "Mrs. Clinton Walker House",
       "title": "Mrs. Clinton Walker House (Carmel-by-the-Sea)",
       "subtitle": "1952, на скале над океаном, Кармел; продажа 2023",
-      "price": 22000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2023",
-      "note": "Продан в 2023 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Mrs._Clinton_Walker_House"
@@ -8664,12 +7995,10 @@
       "model": "Kaufmann Desert House",
       "title": "Kaufmann Desert House (Palm Springs)",
       "subtitle": "1946, Рихард Нойтра, Палм-Спрингс; продажа 2022",
-      "price": 13000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2022",
-      "note": "Продан в 2022 г. — рекорд для рынка Палм-Спрингс.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Kaufmann_Desert_House"
@@ -8691,12 +8020,10 @@
       "model": "Fallingwater",
       "title": "Fallingwater (Mill Run, Pennsylvania)",
       "subtitle": "1936–1939, дом и гостевой флигель, Пенсильвания",
-      "price": 155000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1939",
-      "note": "Итоговая стоимость строительства дома и гостевого флигеля (почти вчетверо выше исходного бюджета).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Fallingwater"
@@ -8720,12 +8047,10 @@
       "model": "Empire State Building",
       "title": "Empire State Building (construction)",
       "subtitle": "1930–1931, 102 этажа, Нью-Йорк",
-      "price": 40948900,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1931",
-      "note": "Стоимость строительства небоскрёба по данным на момент постройки.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Empire_State_Building"
@@ -8748,12 +8073,10 @@
       "model": "Mar-a-Lago",
       "title": "Mar-a-Lago (Palm Beach)",
       "subtitle": "1927, поместье М. М. Пост, Палм-Бич; покупка 1985",
-      "price": 7000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "1985",
-      "note": "Цена покупки поместья Дональдом Трампом в 1985 г. (без учёта мебели; общая сумма по разным источникам выше).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Mar-a-Lago"
@@ -8776,12 +8099,10 @@
       "model": "Пентхаус One57",
       "title": "One57 top penthouse",
       "subtitle": "2014, верхний пентхаус, Billionaires' Row",
-      "price": 100500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2014",
-      "note": "Верхний пентхаус One57 продан в 2014 г.; покупателем оказался Майкл Делл.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/One57"
@@ -8804,12 +8125,10 @@
       "model": "Grey Gardens",
       "title": "Grey Gardens (East Hampton)",
       "subtitle": "1897, Ист-Хэмптон; продажа 2017",
-      "price": 15500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2017-12-20",
-      "note": "Продан дизайнеру Лиз Ланге 20 декабря 2017 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Grey_Gardens_(estate)"
@@ -8832,12 +8151,10 @@
       "model": "Graceland",
       "title": "Graceland (Memphis)",
       "subtitle": "1939, Мемфис; покупка Элвисом 1957",
-      "price": 102500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "1957-03-19",
-      "note": "Цена, которую Элвис Пресли заплатил за поместье 19 марта 1957 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Graceland"
@@ -8860,12 +8177,10 @@
       "model": "Woolworth Building",
       "title": "Woolworth Building (construction)",
       "subtitle": "1910–1913, 57 этажей, Нью-Йорк",
-      "price": 13500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1913",
-      "note": "Итоговая оценочная стоимость строительства (включая землю $5 млн).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Woolworth_Building"
@@ -8888,12 +8203,10 @@
       "model": "Casa Casuarina",
       "title": "Casa Casuarina (Versace Mansion), Miami Beach",
       "subtitle": "1930, Оушен-драйв, Майами-Бич; продажа 2013",
-      "price": 41500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2013",
-      "note": "Куплен компанией VM South Beach LLC в 2013 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Casa_Casuarina"
@@ -8917,12 +8230,10 @@
       "model": "Pickfair",
       "title": "Pickfair (Beverly Hills)",
       "subtitle": "Поместье Пикфорд и Фэрбенкса, Беверли-Хиллз; 2005",
-      "price": 15000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2005-04-19",
-      "note": "Куплен компанией UNICOM Global 19 апреля 2005 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Pickfair"
@@ -8944,12 +8255,10 @@
       "model": "Transamerica Pyramid",
       "title": "Transamerica Pyramid (San Francisco)",
       "subtitle": "1972, 48 этажей, Сан-Франциско; продажа 2020",
-      "price": 650000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2020-10",
-      "note": "В 2020 г. Aegon продала здание SHVO и Deutsche Finance America.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Transamerica_Pyramid"
@@ -8972,12 +8281,10 @@
       "model": "Space Needle",
       "title": "Space Needle (Seattle), construction",
       "subtitle": "1961–1962, 184 м, Сиэтл",
-      "price": 4500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1962-04",
-      "note": "Стоимость строительства башни к Всемирной выставке 1962 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Space_Needle"
@@ -9000,12 +8307,10 @@
       "model": "Golden Gate Bridge",
       "title": "Golden Gate Bridge, construction",
       "subtitle": "1933–1937, пролёт 1280 м, Сан-Франциско",
-      "price": 35000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1937-05",
-      "note": "Стоимость строительства (по источнику — «более $35 млн», проект сдан с экономией бюджета).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Golden_Gate_Bridge"
@@ -9028,12 +8333,10 @@
       "model": "Gateway Arch",
       "title": "Gateway Arch (St. Louis), construction",
       "subtitle": "1963–1965, 192 м, нержавеющая сталь, Сент-Луис",
-      "price": 13000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1965-10",
-      "note": "Общая стоимость строительства арки.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Gateway_Arch"
@@ -9056,12 +8359,10 @@
       "model": "Walt Disney Concert Hall",
       "title": "Walt Disney Concert Hall (Los Angeles)",
       "subtitle": "2003, Фрэнк Гери, Лос-Анджелес",
-      "price": 274000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "2003-10",
-      "note": "Оценочная стоимость проекта на момент завершения (из них $110 млн — паркинг).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Walt_Disney_Concert_Hall"
@@ -9083,12 +8384,10 @@
       "model": "Guggenheim Bilbao",
       "title": "Guggenheim Museum Bilbao, construction",
       "subtitle": "1993–1997, титан, Фрэнк Гери, Бильбао",
-      "price": 89000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1997-10",
-      "note": "Стоимость строительства музея подрядчиком Ferrovial.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Guggenheim_Museum_Bilbao"
@@ -9111,12 +8410,10 @@
       "model": "Lucas Oil Stadium",
       "title": "Lucas Oil Stadium (Indianapolis)",
       "subtitle": "2008, раздвижная крыша, ~67 000 мест",
-      "price": 720000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "2008-08",
-      "note": "Общая стоимость строительства стадиона (открыт 16 августа 2008 г.).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Lucas_Oil_Stadium"
@@ -9138,12 +8435,10 @@
       "model": "Fenway Park",
       "title": "Fenway Park (Boston), construction",
       "subtitle": "1912, Бостон, старейший стадион MLB",
-      "price": 650000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1912-04",
-      "note": "Стоимость строительства стадиона (открыт 20 апреля 1912 г.).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Fenway_Park"
@@ -9166,12 +8461,10 @@
       "model": "Wrigley Field",
       "title": "Wrigley Field (Chicago), construction",
       "subtitle": "1914, Чикаго, стадион «Кабс»",
-      "price": 250000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1914-04",
-      "note": "Стоимость строительства стадиона (открыт 23 апреля 1914 г.).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Wrigley_Field"
@@ -9194,12 +8487,10 @@
       "model": "Oheka Castle",
       "title": "Oheka Castle (Long Island)",
       "subtitle": "1919, 127 комнат, Лонг-Айленд; продажа 1988",
-      "price": 22500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "1988",
-      "note": "В 1988 г. Гэри Мелиус продал замок японскому бизнесмену Хидэки Ёкои.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Oheka_Castle"
@@ -9222,12 +8513,10 @@
       "model": "Robie House",
       "title": "Frederick C. Robie House (Chicago)",
       "subtitle": "1910, стиль прерий, Чикаго; продажа 1958",
-      "price": 102000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "1958-08",
-      "note": "Девелопер Уильям Зекендорф приобрёл дом в августе 1958 г., спасая его от сноса.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Frederick_C._Robie_House"
@@ -9250,12 +8539,10 @@
       "model": "Stahl House",
       "title": "Stahl House (Case Study House #22)",
       "subtitle": "1959–1960, Case Study House #22, Голливуд-Хиллз",
-      "price": 37500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1960",
-      "note": "Стоимость строительства дома по проекту Пьера Кёнига (бассейн — отдельно).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Stahl_House"
@@ -9279,12 +8566,10 @@
       "model": "Brooklyn Bridge",
       "title": "Brooklyn Bridge, construction",
       "subtitle": "1869–1883, висячий мост, Нью-Йорк",
-      "price": 15500000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "construction_cost",
       "priceDate": "1883-05",
-      "note": "Стоимость строительства моста в долларах 1883 г. (открыт 24 мая 1883 г.).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Brooklyn_Bridge"
@@ -9307,12 +8592,10 @@
       "model": "Panigale V4 R (2026)",
       "title": "2026 Ducati Panigale V4 R",
       "subtitle": "2026, V4 998 см³, омологационный супербайк",
-      "price": 49995,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-03",
-      "note": "Стартовая рекомендованная цена (MSRP) в США для модели 2026 года.",
       "source": {
         "label": "aol.com (Robb Report)",
         "url": "https://www.aol.com/lifestyle/ducati-introduces-2026-panigale-v4-223013626.html"
@@ -9335,12 +8618,10 @@
       "model": "Superleggera V4 Centenario",
       "title": "Ducati Superleggera V4 Centenario",
       "subtitle": "2026, карбоновая рама и колёса, 500 номерных экземпляров",
-      "price": 165000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026-03",
-      "note": "Цена в США, объявленная Ducati; все 500 экземпляров распроданы сразу после анонса.",
       "source": {
         "label": "finance.yahoo.com",
         "url": "https://finance.yahoo.com/news/ducatis-165000-no-limits-superleggera-motorcycle-is-already-sold-out-135940211.html"
@@ -9363,12 +8644,10 @@
       "model": "CVO Road Glide ST (2026)",
       "title": "2026 Harley-Davidson CVO Road Glide ST",
       "subtitle": "2026, V-twin Milwaukee-Eight 121, заводской кастом CVO",
-      "price": 44999,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Рекомендованная цена в США без учёта доставки ($895).",
       "source": {
         "label": "motorcycle.com",
         "url": "https://www.motorcycle.com/specs/harley-davidson/touring/2026/road-glide/cvo-st/detail.html"
@@ -9391,12 +8670,10 @@
       "model": "M 1000 RR «50 Years M»",
       "title": "BMW M 1000 RR 50 Years M Edition",
       "subtitle": "2022, рядная 4-ка 999 см³, юбилейная версия",
-      "price": 36995,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2022-05",
-      "note": "Рекомендованная цена в США при анонсе юбилейной версии, без доставки ($645).",
       "source": {
         "label": "press.bmwgroup.com",
         "url": "https://www.press.bmwgroup.com/usa/article/detail/T0391614EN_US/bmw-motorrad-presents-the-bmw-m-1000-rr-as-the-anniversary-model-m-rr-50-years-m"
@@ -9419,12 +8696,10 @@
       "model": "Ninja H2R (2026)",
       "title": "2026 Kawasaki Ninja H2R ABS",
       "subtitle": "2026, 998 см³ с наддувом, трековый, ~310 л.с.",
-      "price": 59100,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2026",
-      "note": "Рекомендованная цена в США для трековой версии 2026 модельного года.",
       "source": {
         "label": "rideapart.com",
         "url": "https://www.rideapart.com/news/771622/kawasaki-h2-h2r-superbike-supercharged-2026-pricing-usa/"
@@ -9453,12 +8728,10 @@
       "model": "Gold Wing Tour (2025)",
       "title": "2025 Honda Gold Wing Tour",
       "subtitle": "2025, оппозитная 6-ка 1833 см³, туристический",
-      "price": 28700,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-02",
-      "note": "Рекомендованная цена в США за базовую версию Gold Wing Tour 2025 г.",
       "source": {
         "label": "powersportsbusiness.com",
         "url": "https://powersportsbusiness.com/top-stories/2025/02/06/honda-celebrates-50th-anniversary-of-gold-wing-with-2025-models/"
@@ -9488,12 +8761,10 @@
       "model": "Rocket 3 Storm R",
       "title": "2025 Triumph Rocket 3 Storm R",
       "subtitle": "2025, рядная 3-ка 2458 см³ — самый большой серийный мотор",
-      "price": 24995,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024-03",
-      "note": "Рекомендованная цена версии Storm R 2025 модельного года при анонсе.",
       "source": {
         "label": "ultimatemotorcycling.com",
         "url": "https://ultimatemotorcycling.com/?p=276007"
@@ -9516,12 +8787,10 @@
       "model": "1390 Super Duke R Evo",
       "title": "2024 KTM 1390 Super Duke R Evo",
       "subtitle": "2024, V-twin 1350 см³, 190 л.с., нейкед",
-      "price": 21499,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023-11",
-      "note": "Рекомендованная цена модели 2024 года при первом анонсе.",
       "source": {
         "label": "ultimatemotorcycling.com",
         "url": "https://ultimatemotorcycling.com/2023/11/29/2024-ktm-1390-super-duke-r-evo-first-look-17-fast-facts"
@@ -9544,12 +8813,10 @@
       "model": "SR/F (2025)",
       "title": "2025 Zero SR/F Z-Force 17.3",
       "subtitle": "2025, электромотоцикл, батарея 17,3 кВт·ч",
-      "price": 20495,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025",
-      "note": "Рекомендованная цена в США для электромотоцикла SR/F 2025 г.",
       "source": {
         "label": "motorcycle.com",
         "url": "https://www.motorcycle.com/specs/zero/standard/2025/sr-f/z-force-17-3/detail.html"
@@ -9571,12 +8838,10 @@
       "model": "KRGT-1",
       "title": "Arch Motorcycle KRGT-1",
       "subtitle": "Ручная сборка, V-twin S&S 2032 см³, компания Киану Ривза",
-      "price": 78000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2016-08",
-      "note": "Ориентировочная цена нового мотоцикла ручной сборки, по данным Time Out (2016).",
       "source": {
         "label": "timeout.com",
         "url": "https://www.timeout.com/los-angeles/blog/keanu-reeves-will-build-you-a-motorcycleif-youve-got-78-000-081716"
@@ -9599,12 +8864,10 @@
       "model": "GTS 310 (2025)",
       "title": "2025 Vespa GTS 310",
       "subtitle": "2025, скутер 310 см³, стальной кузов",
-      "price": 7899,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025",
-      "note": "Рекомендованная цена в США для GTS 310 2025 г.",
       "source": {
         "label": "motorcycle.com",
         "url": "https://www.motorcycle.com/specs/vespa/scooter/2025/gts/310/detail.html"
@@ -9626,12 +8889,10 @@
       "model": "Roadmaster Elite (2025)",
       "title": "2025 Indian Roadmaster Elite",
       "subtitle": "2025, V-twin PowerPlus 112, 300 номерных экземпляров",
-      "price": 41999,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2024-11",
-      "note": "Рекомендованная цена в США лимитированной версии 2025 г.",
       "source": {
         "label": "cyclenews.com",
         "url": "https://www.cyclenews.com/2024/11/article/new-2025-indian-motorcycle-roadmaster-elite-specs-and-price"
@@ -9653,12 +8914,10 @@
       "model": "Vincent Black Lightning 1951",
       "title": "1951 Vincent Black Lightning (frame 7305, ex-Jack Ehret)",
       "subtitle": "1951, 998 см³, рекорд Австралии 141,5 миль/ч, оригинал",
-      "price": 929000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2018-01",
-      "note": "Продан на аукционе Bonhams в Лас-Вегасе в январе 2018 г.; на тот момент — мировой рекорд для мотоцикла.",
       "source": {
         "label": "ridermagazine.com",
         "url": "https://ridermagazine.com/record-setting-1951-vincent-black-lightning-sells-for-929000-at-auction/"
@@ -9687,12 +8946,10 @@
       "model": "Harley-Davidson Strap Tank 1908",
       "title": "1908 Harley-Davidson Strap Tank",
       "subtitle": "1908, одноцилиндровый, оригинальные бак и колёса",
-      "price": 935000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-01",
-      "note": "Продан на аукционе Mecum в январе 2023 г. — рекорд для мотоцикла на аукционе.",
       "source": {
         "label": "abc7chicago.com",
         "url": "https://abc7chicago.com/post/1908-harley-davidson-strap-tank-motorcycle-auction/12878817/"
@@ -9715,12 +8972,10 @@
       "model": "Чоппер Captain America",
       "title": "Easy Rider 'Captain America' Harley-Davidson chopper",
       "subtitle": "1969, Harley-Davidson Panhead, фильм «Беспечный ездок»",
-      "price": 1350000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2014-10",
-      "note": "Продан на аукционе голливудских реликвий Profiles in History в октябре 2014 г.; подлинность экземпляра оспаривалась.",
       "source": {
         "label": "motorcyclenews.com",
         "url": "https://motorcyclenews.com/news/2014/october/captain-america-sells-for-135-million"
@@ -9749,12 +9004,10 @@
       "model": "Husqvarna Стива Маккуина",
       "title": "1971 Husqvarna 400 Cross ex-Steve McQueen",
       "subtitle": "1971, мотокросс 400 см³, принадлежал Стиву Маккуину",
-      "price": 144500,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2011-05",
-      "note": "Продан на аукционе Bonhams & Butterfields в Кармеле в мае 2011 г. — мировой рекорд для Husqvarna.",
       "source": {
         "label": "sportscarmarket.com",
         "url": "https://www.sportscarmarket.com/news/world-record-price-for-mcqueen-husqvarna"
@@ -9776,12 +9029,10 @@
       "model": "G700",
       "title": "Gulfstream G700",
       "subtitle": "Бизнес-джет, 2×Rolls-Royce Pearl, дальность ~13 900 км",
-      "price": 79900000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023",
-      "note": "Цена в типовой комплектации (equipped price) по данным справочника Business & Commercial Aviation, 2023 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/G650"
@@ -9810,12 +9061,10 @@
       "model": "Global 7500",
       "title": "Bombardier Global 7500",
       "subtitle": "Бизнес-джет, 4 салона, дальность ~14 260 км",
-      "price": 78000000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023",
-      "note": "Цена в типовой комплектации по справочнику Business & Commercial Aviation, 2023 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Bombardier_Global_7500"
@@ -9843,12 +9092,10 @@
       "model": "Citation Longitude",
       "title": "Cessna Citation Longitude",
       "subtitle": "Бизнес-джет супер-среднего класса, до 12 пассажиров",
-      "price": 29995000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023",
-      "note": "Цена в типовой комплектации по справочнику Business & Commercial Aviation, 2023 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Cessna_Citation_Longitude"
@@ -9877,12 +9124,10 @@
       "model": "PC-24",
       "title": "Pilatus PC-24",
       "subtitle": "Бизнес-джет, умеет садиться на грунт",
-      "price": 12200000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023",
-      "note": "Цена в типовой комплектации по справочнику Business & Commercial Aviation, 2023 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Pilatus_PC-24"
@@ -9911,12 +9156,10 @@
       "model": "PC-12 NGX",
       "title": "Pilatus PC-12 NGX",
       "subtitle": "Одномоторный турбовинтовой, PT6E-67XP, до 9 пассажиров",
-      "price": 6028000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023",
-      "note": "Цена в типовой комплектации по справочнику Business & Commercial Aviation, 2023 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Pilatus_PC-12"
@@ -9944,12 +9187,10 @@
       "model": "Vision Jet SF50 G2+",
       "title": "Cirrus Vision SF50 G2+",
       "subtitle": "Однодвигательный персональный джет с парашютом",
-      "price": 3250000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023",
-      "note": "Цена в типовой комплектации версии G2+ по справочнику Business & Commercial Aviation, 2023 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/Cirrus_Vision_SF50"
@@ -9978,12 +9219,10 @@
       "model": "HondaJet Elite II",
       "title": "Honda HA-420 HondaJet Elite II",
       "subtitle": "Лёгкий бизнес-джет, двигатели над крылом",
-      "price": 6950000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2022-10",
-      "note": "Цена новой версии Elite II при анонсе в октябре 2022 г.",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/HondaJet"
@@ -10012,12 +9251,10 @@
       "model": "777-9 (777X)",
       "title": "Boeing 777-9",
       "subtitle": "Крупнейший двухмоторный лайнер, складные законцовки крыла",
-      "price": 442200000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2023-05",
-      "note": "Каталожная (list) цена Boeing на май 2023 г.; реальные контракты заключаются со скидками.",
       "source": {
         "label": "malaymail.com",
         "url": "https://www.malaymail.com/news/money/2024/07/20/inside-the-777x-what-you-need-to-know-about-the-latest-boeing-model/144450"
@@ -10046,12 +9283,10 @@
       "model": "A380",
       "title": "Airbus A380-800",
       "subtitle": "Двухпалубный лайнер, до 853 мест",
-      "price": 445600000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2018-01",
-      "note": "Средняя каталожная цена Airbus на 2018 г.; авиакомпании платили значительно меньше.",
       "source": {
         "label": "businesstraveller.com",
         "url": "https://www.businesstraveller.com/business-travel/airbus-publishes-2018-aircraft-list-prices/"
@@ -10080,12 +9315,10 @@
       "model": "A350-1000",
       "title": "Airbus A350-1000",
       "subtitle": "Широкофюзеляжный лайнер, 350–410 мест",
-      "price": 366500000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2018-01",
-      "note": "Средняя каталожная цена Airbus на 2018 г.",
       "source": {
         "label": "businesstraveller.com",
         "url": "https://www.businesstraveller.com/business-travel/airbus-publishes-2018-aircraft-list-prices/"
@@ -10114,12 +9347,10 @@
       "model": "F-35A Lightning II",
       "title": "Lockheed Martin F-35A Lightning II",
       "subtitle": "Истребитель 5-го поколения, лоты 18–19",
-      "price": 92000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "unit_cost",
       "priceDate": "2026-09",
-      "note": "Средняя стоимость производства одного F-35A (flyaway cost) в лотах 18–19, с двигателем.",
       "source": {
         "label": "airandspaceforces.com",
         "url": "https://www.airandspaceforces.com/what-an-f-35-costs-right-now-variants-2026/"
@@ -10148,12 +9379,10 @@
       "model": "B-2 Spirit",
       "title": "Northrop Grumman B-2 Spirit",
       "subtitle": "Стелс-бомбардировщик «летающее крыло», построен 21",
-      "price": 737000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "unit_cost",
       "priceDate": "1997",
-      "note": "Закупочная стоимость одного B-2 в долларах 1997 г. (без затрат на разработку).",
       "source": {
         "label": "en.wikipedia.org",
         "url": "https://en.wikipedia.org/wiki/B-2"
@@ -10183,12 +9412,10 @@
       "model": "Spitfire TR.IX SM520",
       "title": "Supermarine Spitfire TR Mk IX SM520 (G-ILDA)",
       "subtitle": "Двухместный учебный Spitfire Mk IX, лётный",
-      "price": 2527784,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2009-04",
-      "note": "Продан на аукционе Bonhams в Музее RAF в Хендоне (Лондон) 20 апреля 2009 г.",
       "source": {
         "label": "sportscarmarket.com",
         "url": "https://www.sportscarmarket.com/news/spitfire-soars-to-2-5m-at-bonhams-hendon"
@@ -10211,12 +9438,10 @@
       "model": "JetStar Элвиса Пресли",
       "title": "1962 Lockheed 1329 JetStar ex-Elvis Presley",
       "subtitle": "1962, Lockheed JetStar, 40 лет простоял в пустыне",
-      "price": 286000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-01",
-      "note": "Продан на аукционе Mecum в начале 2023 г., цена с комиссиями.",
       "source": {
         "label": "antiquetrader.com",
         "url": "https://www.antiquetrader.com/auctions/elvis-jet-sells-at-auction"
@@ -10245,12 +9470,10 @@
       "model": "Jetson ONE",
       "title": "Jetson ONE personal eVTOL",
       "subtitle": "Одноместный электромультикоптер, сверхлёгкий класс",
-      "price": 128000,
       "currency": "USD",
       "region": "US",
       "priceType": "new_msrp",
       "priceDate": "2025-10",
-      "note": "Цена для покупателей, озвученная на UP Summit 2025.",
       "source": {
         "label": "flightjournal.com",
         "url": "https://next.flightjournal.com/articles/now-available-128k-personal-evtols"
@@ -10273,12 +9496,10 @@
       "model": "Mercedes W04 Хэмилтона",
       "title": "2013 Mercedes-AMG F1 W04 (chassis 04), Lewis Hamilton",
       "subtitle": "2013, V8 2,4 л, победа на Гран-при Венгрии",
-      "price": 18815000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2023-11-17",
-      "note": "Продан на аукционе RM Sotheby's в Лас-Вегасе; номинальная цена продажи в долларах США по данным Википедии.",
       "source": {
         "label": "en.wikipedia.org — List of most expensive cars sold at auction",
         "url": "https://en.wikipedia.org/wiki/List_of_most_expensive_cars_sold_at_auction"
@@ -10307,12 +9528,10 @@
       "model": "Ferrari F2003-GA Шумахера",
       "title": "2003 Ferrari F2003-GA (chassis 229), Michael Schumacher",
       "subtitle": "2003, V10 3,0 л, 5 побед, 6-й титул Шумахера",
-      "price": 14873327,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-11",
-      "note": "Продан на аукционе Sotheby's в Женеве в ноябре 2022 г.",
       "source": {
         "label": "news.dupontregistry.com",
         "url": "https://news.dupontregistry.com/ferrari/sothebys-sells-michael-schumacher-driven-2003-ferrari-f1-racecar-at-geneva-auction-for-14873327"
@@ -10341,12 +9560,10 @@
       "model": "McLaren MCL40A (2026)",
       "title": "2026 McLaren Formula 1 Team MCL40A",
       "subtitle": "Болид F1 сезона 2026, шасси Пиастри или Норриса на выбор",
-      "price": 11480000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2025-12",
-      "note": "Продан на аукционе RM Sotheby's в Абу-Даби 5 декабря 2025 г. — впервые болид F1 продали до того, как он вышел на старт.",
       "source": {
         "label": "rmsothebys.com",
         "url": "https://rmsothebys.com/media-center/press-releases/rm-sotheby-s-inaugural-abu-dhabi-collectors-week-auction-grosses-85-million-becoming-the-region-s-most-successful-collector-car-auction-ever/"
@@ -10375,12 +9592,10 @@
       "model": "Ferrari F2001 Шумахера",
       "title": "2001 Ferrari F2001 (chassis 211), Michael Schumacher",
       "subtitle": "2001, V10 3,0 л, победа на Гран-при Монако",
-      "price": 7504000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2017-11",
-      "note": "Продан на вечерних торгах современного искусства Sotheby's в Нью-Йорке в ноябре 2017 г.",
       "source": {
         "label": "petrolicious.com",
         "url": "https://petrolicious.com/schumacher-s-ferrari-sells-for-record-7-5-million"
@@ -10409,12 +9624,10 @@
       "model": "Ferrari F2002 Шумахера",
       "title": "2002 Ferrari F2002, Michael Schumacher",
       "subtitle": "2002, V10 3,0 л, чемпионская победа во Франции",
-      "price": 6643750,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2019-11",
-      "note": "Продан на аукционе RM Sotheby's и Formula 1 в Абу-Даби 30 ноября 2019 г.",
       "source": {
         "label": "formula1.com",
         "url": "https://www.formula1.com/en/latest/article/ex-schumacher-ferrari-becomes-second-most-expensive-f1-car-sold-at-auction.2rDesnT8UMFcXo4pWvweQi"
@@ -10442,12 +9655,10 @@
       "model": "Ferrari F300 Шумахера",
       "title": "1998 Ferrari F300 (chassis 187), Michael Schumacher",
       "subtitle": "1998, V10 3,0 л, 4 гонки — 4 победы",
-      "price": 6220000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2022-08",
-      "note": "Продан на аукционе Sotheby's в Монтерее в августе 2022 г.",
       "source": {
         "label": "crash.net",
         "url": "https://crash.net/f1/news/1010371/1/michael-schumacher-s-1998-ferrari-sold-headspinning-pricetag"
@@ -10475,12 +9686,10 @@
       "model": "McLaren MP4/8A Сенны",
       "title": "1993 McLaren MP4/8A (chassis 6), Ayrton Senna",
       "subtitle": "1993, Ford V8, шестая победа Сенны в Монако",
-      "price": 4949000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2018-05",
-      "note": "Продан на аукционе Bonhams в Монако в 2018 г. (во время Historic Grand Prix), цена с комиссией.",
       "source": {
         "label": "crankandpiston.com",
         "url": "https://crankandpiston.com/?p=120615"
@@ -10509,12 +9718,10 @@
       "model": "Яхта Alfa Nero",
       "title": "Alfa Nero superyacht (Oceanco, 81 m)",
       "subtitle": "Oceanco 2007, 81 м, бассейн-вертолётная площадка",
-      "price": 40000000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "private_sale",
       "priceDate": "2024-07",
-      "note": "Продана по частному контракту в июле 2024 г. после ареста яхты на Антигуа.",
       "source": {
         "label": "fortune.com",
         "url": "https://fortune.com/2024/07/22/alfa-nero-superyacht-sale-price-russian-billionaire-oligarch-new-secret-owner"
@@ -10543,12 +9750,10 @@
       "model": "Lotus Esprit «Wet Nellie»",
       "title": "1976 Lotus Esprit submarine 'Wet Nellie' (The Spy Who Loved Me)",
       "subtitle": "1976, реквизит-субмарина из «Шпиона, который меня любил»",
-      "price": 866000,
       "currency": "USD",
       "region": "WORLD",
       "priceType": "auction",
       "priceDate": "2013-10",
-      "note": "Продан на аукционе RM Auctions осенью 2013 г.; покупателем назвали Илона Маска.",
       "source": {
         "label": "jalopnik.com",
         "url": "https://www.jalopnik.com/elon-musk-is-secret-buyer-who-spent-866k-on-james-bon-1446999712/"
@@ -10570,76 +9775,7 @@
         "Bond submarine car"
       ]
     }
-  ];
-
-  var PENDING = [
-    {
-      "id": "nike-af1-07",
-      "reason": "Nike Air Force 1 '07, $115 — nike.com не отдаёт ссылку на фото"
-    },
-    {
-      "id": "ridge-wallet",
-      "reason": "Ridge Wallet Gunmetal, $95 — фото на странице другого цвета"
-    },
-    {
-      "id": "chanel-n5-edp",
-      "reason": "Chanel N°5 EDP 100 мл, $190 — нет фото на странице"
-    },
-    {
-      "id": "longchamp-le-pliage-l",
-      "reason": "Longchamp Le Pliage L, $180 — нет фото"
-    },
-    {
-      "id": "fjallraven-kanken",
-      "reason": "Fjällräven Kånken, $95 — нет фото"
-    },
-    {
-      "id": "laneige-lip-mask",
-      "reason": "Laneige Lip Sleeping Mask 22 г, $25 (Sephora) — нет фото"
-    },
-    {
-      "id": "the-ordinary-niacinamide",
-      "reason": "The Ordinary Niacinamide 30 мл, $6 — нет фото"
-    },
-    {
-      "id": "mac-ruby-woo",
-      "reason": "MAC Retro Matte Lipstick, $24 — нет фото"
-    },
-    {
-      "id": "dyson-supersonic",
-      "reason": "Dyson Supersonic, $399.99 — нет фото"
-    },
-    {
-      "id": "nintendo-switch-2",
-      "reason": "Nintendo Switch 2, $499.99 — нет фото на странице"
-    },
-    {
-      "id": "logitech-superlight-2",
-      "reason": "Logitech G PRO X Superlight 2, $159.99 — нет фото товара"
-    },
-    {
-      "id": "roomba-combo-essential",
-      "reason": "Roomba Combo Essential, $274.99 — нет фото"
-    },
-    {
-      "id": "momofuku-chili-crunch",
-      "reason": "Momofuku Chili Crunch, $13 — на странице нет фото самого товара"
-    },
-    {
-      "id": "la-colombe-draft-latte",
-      "reason": "La Colombe Draft Latte 12 шт., $34 — фото на странице не подходит"
-    },
-    {
-      "id": "hydro-flask-32",
-      "reason": "Hydro Flask 32 oz Wide Mouth, $44.95 — нет фото"
-    },
-    {
-      "id": "dyson-airwrap-coanda2x",
-      "reason": "Dyson Airwrap Co-anda2x, $749.99 — нет фото товара на странице"
-    }
-  ];
-
-  var api = { CATEGORIES: CATEGORIES, REGIONS: REGIONS, QUESTIONS: QUESTIONS, PENDING: PENDING };
-  if (typeof module !== "undefined" && module.exports) module.exports = api;
-  else root.FV_DATA = api;
-})(typeof window !== "undefined" ? window : this);
+  ],
+  "PENDING": []
+};
+})(window);
