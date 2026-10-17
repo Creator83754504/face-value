@@ -109,21 +109,29 @@ test("isGoodAnswer и accuracyPercent", () => {
   assert.equal(S.accuracyPercent(0, 100), 0);
 });
 
-test("pickRound: 5 разных вопросов, ≤2 из категории, разные уровни цен", () => {
-  const qs = DATA.QUESTIONS;
-  for (let i = 0; i < 300; i++) {
-    const round = S.pickRound(qs, 5, []);
+test("pickRound: 5 разных вопросов; ≤2 из категории и ≤2 одного уровня цен — почти всегда", () => {
+  // С системой редкости эти правила стали «мягкими»: редкость важнее. Если, например,
+  // выпал EPIC, а все эпические товары дорогие, допускается третий дорогой товар.
+  const qs = DATA.QUESTIONS.filter((q) => q.status === "verified"); // как в игре: только объекты с фото
+  let seed = 12345;
+  const random = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  let catViol = 0, tierViol = 0;
+  const ROUNDS = 3000;
+  for (let i = 0; i < ROUNDS; i++) {
+    const round = S.pickRound(qs, 5, [], random);
     assert.equal(round.length, 5);
-    assert.equal(new Set(round.map((q) => q.id)).size, 5);
+    assert.equal(new Set(round.map((q) => q.id)).size, 5, "без повторов");
     const perCat = {}, perTier = {};
     round.forEach((q) => {
       perCat[q.category] = (perCat[q.category] || 0) + 1;
       const t = S.priceTier(q.price);
       perTier[t] = (perTier[t] || 0) + 1;
     });
-    Object.values(perCat).forEach((n) => assert.ok(n <= 2));
-    Object.values(perTier).forEach((n) => assert.ok(n <= 2, "не больше 2 товаров одного ценового уровня"));
+    if (Object.values(perCat).some((n) => n > 2)) catViol++;
+    if (Object.values(perTier).some((n) => n > 2)) tierViol++;
   }
+  assert.ok(catViol / ROUNDS < 0.01, `категорий нарушено в ${catViol} раундах`);
+  assert.ok(tierViol / ROUNDS < 0.05, `уровней цен нарушено в ${tierViol} раундах`);
 });
 
 test("pickRound: соседние раунды не повторяются", () => {
@@ -142,7 +150,7 @@ test("formatMoney", () => {
   assert.equal(S.formatMoney(227800, "USD"), "$227,800");
 });
 
-test("база: ≥100 вопросов, у каждого бренд, модель, фото, цена, валюта, регион, источник, дата", () => {
+test("база: ≥100 вопросов, у каждого бренд, модель, цена, валюта, регион, источник, дата; фото — у всех, кто участвует в игре", () => {
   const qs = DATA.QUESTIONS;
   assert.ok(qs.length >= 100, `вопросов: ${qs.length}`);
   const ids = new Set();
@@ -155,19 +163,22 @@ test("база: ≥100 вопросов, у каждого бренд, моде�
     titles.add(key);
     assert.ok(DATA.CATEGORIES[q.category], `${q.id}: неизвестная категория`);
     assert.ok(q.brand && q.model && q.title && q.subtitle, `${q.id}: название/бренд/модель`);
-    assert.ok(typeof q.price === "number" && q.price > 0 && q.price < 1e6, `${q.id}: цена`);
+    // Верхняя граница — лимит ввода игрока (MAX_INPUT) и сервера (MAX_GUESS): 1 млрд
+    assert.ok(typeof q.price === "number" && q.price > 0 && q.price <= 1e9 && S.parsePrice(String(q.price)).ok, `${q.id}: цена`);
     assert.equal(q.currency, "USD", `${q.id}: валюта`);
     assert.ok(DATA.REGIONS[q.region], `${q.id}: регион`);
-    assert.equal(q.status, "verified", `${q.id}: статус`);
+    // "needs-image" — цена проверена, но точного фото пока нет: в игре не участвует (ни в клиенте, ни на сервере)
+    assert.ok(q.status === "verified" || q.status === "needs-image", `${q.id}: статус ${q.status}`);
     assert.match(q.source.url, /^https:\/\//, `${q.id}: ссылка на источник`);
     assert.match(q.checkedAt, /^\d{4}-\d{2}-\d{2}$/, `${q.id}: дата`);
-    assert.match(q.image.remote, /^https:\/\//, `${q.id}: фото`);
+    if (q.status === "verified") assert.match(q.image.remote, /^https:\/\//, `${q.id}: фото`);
+    else assert.equal(q.image, null, `${q.id}: у объекта без фото не должно быть случайной картинки`);
   }
 });
 
-test("база: все 8 категорий представлены, есть дешёвые, средние и дорогие товары", () => {
+test("база: все категории представлены, есть дешёвые, средние и дорогие товары", () => {
   const cats = new Set(DATA.QUESTIONS.map((q) => q.category));
-  assert.equal(cats.size, 8);
+  assert.equal(cats.size, Object.keys(DATA.CATEGORIES).length);
   Object.keys(DATA.CATEGORIES).forEach((c) => assert.ok(cats.has(c), c));
   const tiers = { low: 0, mid: 0, high: 0 };
   DATA.QUESTIONS.forEach((q) => tiers[S.priceTier(q.price)]++);
@@ -182,7 +193,9 @@ test("база: пояснения не раскрывают цены други
       if (other.id === q.id) continue;
       const p = prices.get(other.id);
       const plain = p.replace(/,/g, "");
-      assert.ok(!q.note.includes(p) && !q.note.includes(plain + " ") && !q.note.endsWith(plain), `${q.id}: в пояснении цена ${other.id} (${p})`);
+      // "$400 млн" — это не цена товара за $400: сумма с «млн/млрд/тыс/k/m» после неё не считается совпадением
+      const re = new RegExp("(" + [p, plain].map((x) => x.replace(/[$.]/g, "\\$&")).join("|") + ")(?!\\d|[.,]\\d|\\s?(млн|млрд|тыс)|\\s?[km]\\b)");
+      assert.ok(!re.test(q.note), `${q.id}: в пояснении цена ${other.id} (${p})`);
     }
   }
 });

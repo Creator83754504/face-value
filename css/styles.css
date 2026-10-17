@@ -222,6 +222,85 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   color: var(--text);
 }
 .chip--ghost { background: transparent; color: var(--muted); }
+.chip--rarity { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; background: transparent; }
+.chip--rarity[data-rarity="RARE"] { color: #9fc5ff; border-color: rgba(159, 197, 255, .45); }
+.chip--rarity[data-rarity="EPIC"] { color: #d0a8ff; border-color: rgba(208, 168, 255, .5); }
+.chip--rarity[data-rarity="LEGENDARY"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+/* ───── Редкость: оформление карточки ─────
+   COMMON — без изменений. RARE — синяя рамка и мягкое свечение.
+   EPIC — фиолетовая двойная рамка и более заметное свечение.
+   LEGENDARY — золотая градиентная рамка, однократный блик по фото и «появление» метки.
+   Анимации короткие (≤1,3 с, один раз) и отключаются при prefers-reduced-motion. */
+.question-body[data-rarity="RARE"]      { --rar: #6fa8ff; --rar-glow: rgba(111, 168, 255, .28); }
+.question-body[data-rarity="EPIC"]      { --rar: #b77dff; --rar-glow: rgba(183, 125, 255, .34); }
+.question-body[data-rarity="LEGENDARY"] { --rar: #f2c85b; --rar-glow: rgba(242, 200, 91, .38); }
+
+.question-body[data-rarity="RARE"] .photo {
+  box-shadow: 0 0 0 1.5px var(--rar), 0 8px 28px -6px var(--rar-glow);
+}
+.question-body[data-rarity="EPIC"] .photo {
+  box-shadow: 0 0 0 2px var(--rar), 0 0 0 5px rgba(183, 125, 255, .16), 0 10px 36px -4px var(--rar-glow);
+}
+.question-body[data-rarity="LEGENDARY"] .photo {
+  box-shadow: 0 0 0 5px var(--lg-ring, rgba(242, 200, 91, .14)), 0 12px 44px -2px var(--rar-glow);
+}
+/* Золотая градиентная рамка поверх края фото (не перекрывает содержимое: только 3px по краю) */
+.question-body[data-rarity="LEGENDARY"] .photo::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit; padding: 3px;
+  /* Цвета рамки по умолчанию — золото; у LEGENDARY-вопросов с баннером — тема баннера (css/rewards.css) */
+  background: linear-gradient(135deg, var(--lg-1, #fff1b8) 0%, var(--lg-2, #e2a93b) 28%, var(--lg-3, #fbe08a) 50%, var(--lg-4, #b9822a) 74%, var(--lg-1, #ffe9a6) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite: exclude;
+}
+/* Однократный блик: полупрозрачная полоса проходит по фото при появлении вопроса */
+.question-body[data-rarity="LEGENDARY"] .photo::after {
+  content: ""; position: absolute; inset: -20% -60%; z-index: 3; pointer-events: none;
+  background: linear-gradient(105deg, transparent 40%, var(--lg-sheen, rgba(255, 236, 170, .55)) 50%, transparent 60%);
+  opacity: 0; transform: translateX(-60%);
+}
+.question-body.is-entering[data-rarity="LEGENDARY"] .photo::after { animation: rar-sheen 1.1s .35s ease-out both; }
+@keyframes rar-sheen {
+  0%   { opacity: 0; transform: translateX(-60%); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(60%); }
+}
+.question-body.is-entering[data-rarity="EPIC"] .photo,
+.question-body.is-entering[data-rarity="LEGENDARY"] .photo { animation: rise .45s var(--ease) both, rar-glow-in 1.2s ease-out both; }
+@keyframes rar-glow-in { from { filter: brightness(1.06); } to { filter: none; } }
+
+/* Метка редкости: значок + подпись в строке под фото, фото не закрывает */
+.chip--rarity::before { margin-right: 5px; }
+.chip--rarity[data-rarity="RARE"]::before { content: "◆"; }
+.chip--rarity[data-rarity="EPIC"]::before { content: "✦"; }
+.chip--rarity[data-rarity="LEGENDARY"]::before { content: "★"; }
+.chip--rarity[data-rarity="RARE"] { background: rgba(111, 168, 255, .1); }
+.chip--rarity[data-rarity="EPIC"] { background: rgba(183, 125, 255, .12); box-shadow: 0 0 12px -2px rgba(183, 125, 255, .45); }
+.chip--rarity[data-rarity="LEGENDARY"] {
+  color: #1a1306; border-color: transparent;
+  background: linear-gradient(135deg, var(--lg-1, #fff1b8), var(--lg-chip, #e2a93b) 45%, var(--lg-3, #fbe08a));
+  box-shadow: 0 0 14px -2px var(--lg-chip-glow, rgba(242, 200, 91, .6));
+}
+.question-body.is-entering .chip--rarity[data-rarity="LEGENDARY"] { animation: rar-pop .5s .2s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes rar-pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Сегмент прогресса текущего вопроса — цвета редкости */
+.progress i.is-current[data-rarity="RARE"] { background: #6fa8ff; }
+.progress i.is-current[data-rarity="EPIC"] { background: #b77dff; }
+.progress i.is-current[data-rarity="LEGENDARY"] { background: linear-gradient(90deg, #e2a93b, #fff1b8, #e2a93b); }
+
+/* Итоги раунда: отметка редкости у названия */
+.bd-rarity {
+  display: inline-block; vertical-align: 2px; margin-left: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 999px; border: 1px solid currentColor;
+}
+.bd-rarity[data-rarity="RARE"] { color: #9fc5ff; }
+.bd-rarity[data-rarity="EPIC"] { color: #d0a8ff; }
+.bd-rarity[data-rarity="LEGENDARY"] { color: #f2c85b; }
+
 .chip--warn { color: var(--accent); border-color: var(--accent); background: transparent; }
 .product-brand { margin: 0 0 2px; color: var(--muted); font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
 .product-title { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }

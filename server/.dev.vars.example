@@ -1,0 +1,5 @@
+# Скопируйте этот файл в .dev.vars только для локального запуска (npx wrangler dev).
+# .dev.vars не попадает в git. НЕ вставляйте сюда настоящий токен бота.
+# На Cloudflare эти значения задаются как секреты в веб-панели.
+BOT_TOKEN=123456:TEST-TOKEN-FOR-LOCAL-DEV-ONLY
+WEBHOOK_SECRET=local_test_secret_change_me_0123456789

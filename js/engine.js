@@ -59,9 +59,19 @@
     };
   }
 
+  /** Неизвестен ли исход запроса: сеть/таймаут (status 0) или ошибка сервера 5xx. */
+  function isUncertain(err) {
+    if (!err) return false;
+    if (err.code === "network" || err.status === 0 || err.status === undefined) return true;
+    return err.status >= 500;
+  }
+
   function RemoteEngine(opts) {
     var S = opts.scoring;
     var api = opts.api;
+    // Повтор завершения раунда: всего 3 попытки, паузы 0,8 с и 2 с (для тестов можно задать свои)
+    var retry = opts.finishRetry || { attempts: 3, delays: [800, 2000] };
+    var sleep = opts.sleep || function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
     var byId = {};
     opts.questions.forEach(function (q) { byId[q.id] = q; });
     var round = null;
@@ -92,34 +102,40 @@
           return res;
         });
       },
-      
-finish: function () {
-  if (!round) {
-    return Promise.reject(new Error("Раунд не начат"));
-  }
-
-  if (round.answers.length !== round.questions.length) {
-    return Promise.reject(new Error("Есть неотвеченные вопросы"));
-  }
-
-  var answers = round.answers.slice();
-  var id = round.id;
-
-  return api.finishRound(id).then(function (data) {
-    round = null;
-
-    return {
-      total: data.total,
-      results: answers,
-      ranked: true,
-      server: data
-    };
-  });
+      /*
+       * Завершение раунда с ограниченным повтором.
+       * Сервер отвечает на повторное завершение уже сохранённым итогом (repeated: true) и ничего
+       * не начисляет второй раз, поэтому повторять запрос безопасно. Повторяем только когда
+       * результат НЕИЗВЕСТЕН: нет соединения / таймаут или ошибка сервера 5xx (например, запись
+       * прошла, а ответ потерялся). На ответы 4xx (сервер точно отказал) не повторяем.
+       * Если все попытки неудачны, ошибка помечается uncertain = true: результат МОГ сохраниться.
+       */
+      finish: function () {
+        if (!round) return Promise.reject(new Error("Раунд не начат"));
+        var answers = round.answers.slice();
+        var id = round.id;
+        round = null;
+        var delays = retry.delays;
+        var attempt = 0;
+        function tryOnce() {
+          attempt++;
+          return api.finishRound(id).then(function (data) {
+            return { total: data.total, results: answers, ranked: true, server: data, attempts: attempt };
+          }, function (err) {
+            var unknown = isUncertain(err);
+            if (unknown && attempt < retry.attempts) {
+              return sleep(delays[Math.min(attempt - 1, delays.length - 1)]).then(tryOnce);
+            }
+            if (err && typeof err === "object") { err.uncertain = unknown; err.attempts = attempt; }
+            throw err;
+          });
+        }
+        return tryOnce();
       }
     };
   }
 
-  var api = { LocalEngine: LocalEngine, RemoteEngine: RemoteEngine };
+  var api = { LocalEngine: LocalEngine, RemoteEngine: RemoteEngine, isUncertain: isUncertain };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FV_ENGINE = api;
 })(typeof window !== "undefined" ? window : this);
