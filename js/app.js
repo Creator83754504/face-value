@@ -22,12 +22,26 @@
   // их знает только сервер. Тогда играть можно только в рейтинговом режиме внутри Telegram.
   var PUBLIC_BUILD = !!DATA.PUBLIC_BUILD;
   var QUESTIONS = (DATA.QUESTIONS || []).filter(function (q) {
+    // Объекты, для которых ещё не найдено подходящее фото, в игре не участвуют (так же решает сервер)
+    if (q && q.status === "needs-image") return false;
     var hasPrice = typeof q.price === "number" && q.price > 0;
     var ok = q && q.id && q.title && (hasPrice || PUBLIC_BUILD) &&
       q.image && (q.image.remote || LOCAL_IMAGES[q.id]);
     if (!ok) console.warn("[FACE VALUE] Вопрос пропущен (нет цены или фото):", q && q.id);
     return ok;
   });
+
+  // Подписи для типа цены (поле priceType у новых объектов). Старые товары — розничные цены в США.
+  var PRICE_TYPES = {
+    new_msrp:          { chip: "Новый, цена производителя", question: "Сколько стоит новый?" },
+    used_market:       { chip: "Рыночная цена", question: "Сколько стоит на рынке?", big: true },
+    auction:           { chip: "Аукцион", question: "За сколько продали на аукционе?", big: true },
+    private_sale:      { chip: "Частная сделка", question: "За сколько продали?", big: true },
+    listing_ask:       { chip: "Цена в объявлении", question: "Сколько просят?", big: true },
+    estimate:          { chip: "Оценка", question: "Во сколько оценивают?", big: true },
+    unit_cost:         { chip: "Цена одной машины", question: "Сколько стоит одна машина?", big: true },
+    construction_cost: { chip: "Стоимость постройки", question: "Сколько стоила постройка?", big: true }
+  };
 
   // ───── Состояние ─────
   var state = {
@@ -46,14 +60,17 @@
   var el = {
     screens: {
       menu: $("screen-menu"), game: $("screen-game"), results: $("screen-results"),
-      stats: $("screen-stats"), leaderboard: $("screen-leaderboard"), howto: $("screen-howto")
+      stats: $("screen-stats"), leaderboard: $("screen-leaderboard"), howto: $("screen-howto"),
+      profile: $("screen-profile")
     },
+    legendStrip: $("legend-strip"), rewardSheet: $("reward-sheet"), rewardSheetList: $("reward-sheet-list"),
+    rewardSheetTitle: $("reward-sheet-title"),
     greeting: $("greeting"), menuRecord: $("menu-record"), menuRecordValue: $("menu-record-value"),
     menuStatsHint: $("menu-stats-hint"), menuLbHint: $("menu-leaderboard-hint"),
     progress: $("progress"), counter: $("counter"), scoreTotal: $("score-total"),
     body: $("question-body"), photo: $("photo"), photoImg: $("photo-img"),
     photoFallback: $("photo-fallback"), photoSkeleton: $("photo-skeleton"),
-    category: $("product-category"), region: $("product-region"), testTag: $("product-test"),
+    category: $("product-category"), guessLabel: $("guess-label"), guessHint: $("guess-hint"), region: $("product-region"), testTag: $("product-test"), rarity: $("product-rarity"),
     brand: $("product-brand"), title: $("product-title"), subtitle: $("product-subtitle"),
     form: $("guess-form"), field: $("guess-field"), input: $("guess-input"), error: $("guess-error"),
     answerBtn: $("btn-answer"),
@@ -63,9 +80,7 @@
     finalScore: $("final-score"), finalMax: $("final-max"), finalRecord: $("final-record"),
     finalRank: $("final-rank"), finalGood: $("final-good"), finalAccuracy: $("final-accuracy"),
     finalBest: $("final-best"), breakdown: $("breakdown"), finalSync: $("final-sync"),
-    sheet: $("sheet"), sheetTitle: $("sheet-title"), sheetText: $("sheet-text"), sheetOk: $("sheet-ok"),
-subscriptionSheet: $("subscription-sheet"),
-subscriptionText: $("subscription-text")
+    sheet: $("sheet"), sheetTitle: $("sheet-title"), sheetText: $("sheet-text"), sheetOk: $("sheet-ok")
   };
 
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -92,6 +107,7 @@ subscriptionText: $("subscription-text")
     if (name === "menu") renderMenu();
     if (name === "stats") renderStats();
     if (name === "leaderboard") renderLeaderboard();
+    if (name === "profile") renderProfile();
     show(name);
   }
 
@@ -140,72 +156,45 @@ subscriptionText: $("subscription-text")
   }
 
   // ───── Старт раунда ─────
- 
-function startRound(subscriptionVerified) {
-  if (QUESTIONS.length < ROUND_SIZE) {
-    askConfirm("Нет вопросов", "Проверьте файл js/data/questions.js", "Понятно", function () {});
-    return;
-  }
+  function startRound() {
+    if (QUESTIONS.length < ROUND_SIZE) {
+      askConfirm("Нет вопросов", "Проверьте файл js/data/questions.js", "Понятно", function () {});
+      return;
+    }
+    TG.haptic.tap();
+    var useServer = API.enabled();
+    if (PUBLIC_BUILD && !useServer) {
+      askConfirm("Откройте игру в Telegram", "В этой версии цены проверяет сервер, поэтому играть можно только внутри Telegram.", "Понятно", function () {});
+      return;
+    }
+    state.engine = useServer
+      ? ENGINE.RemoteEngine({ scoring: S, api: API, questions: QUESTIONS })
+      : ENGINE.LocalEngine({ scoring: S, questions: QUESTIONS, store: store, roundSize: ROUND_SIZE });
 
-  if (!API.enabled()) {
-    askConfirm(
-      "Открой игру в Telegram",
-      "Для игры и участия в рейтинге необходимо открыть FACE VALUE внутри Telegram.",
-      "Понятно",
-      function () {}
-    );
-    return;
-  }
-
-  if (!subscriptionVerified) {
-    API.subscription().then(function (data) {
-      if (data.subscribed) {
-        startRound(true);
-      } else {
-        el.subscriptionText.textContent =
-          "Чтобы играть и участвовать в рейтинге, подпишись на канал FACE VALUE, затем нажми «Проверить подписку».";
-        el.subscriptionSheet.hidden = false;
-      }
+    state.engine.start().then(function (r) {
+      state.questions = r.questions;
+      state.index = 0;
+      state.total = 0;
+      state.results = [];
+      buildProgress();
+      renderQuestion();
+      show("game");
     }).catch(function (err) {
-      el.subscriptionText.textContent =
-        "Не удалось проверить подписку. " +
-        (err.message || "Проверь интернет и попробуй ещё раз.");
-      el.subscriptionSheet.hidden = false;
+      if (useServer && !PUBLIC_BUILD) {
+        askConfirm("Сервер недоступен", (err && err.message ? err.message + ". " : "") + "Сыграть без рейтинга?", "Играть", function (ok) {
+          if (!ok) return;
+          state.engine = ENGINE.LocalEngine({ scoring: S, questions: QUESTIONS, store: store, roundSize: ROUND_SIZE });
+          state.engine.start().then(function (r) {
+            state.questions = r.questions; state.index = 0; state.total = 0; state.results = [];
+            buildProgress(); renderQuestion(); show("game");
+          });
+        });
+      } else {
+        console.error(err);
+        askConfirm("Не удалось начать раунд", (err && err.message) || "Попробуйте ещё раз чуть позже.", "Понятно", function () {});
+      }
     });
-    return;
   }
-
-  TG.haptic.tap();
-
-  state.engine = ENGINE.RemoteEngine({
-    scoring: S,
-    api: API,
-    questions: QUESTIONS
-  });
-
-  state.engine.start().then(function (r) {
-    state.questions = r.questions;
-    state.index = 0;
-    state.total = 0;
-    state.results = [];
-    buildProgress();
-    renderQuestion();
-    show("game");
-  }).catch(function (err) {
-    console.error("[FACE VALUE] Не удалось начать раунд:", err);
-
-    var message = err && err.message
-      ? err.message
-      : "Не удалось связаться с сервером.";
-
-    askConfirm(
-      "Не удалось начать раунд",
-      message + "\n\nПроверь интернет и подписку на канал FACE VALUE.",
-      "Понятно",
-      function () {}
-    );
-  });
-}
 
   function buildProgress() {
     el.progress.innerHTML = "";
@@ -264,6 +253,7 @@ function startRound(subscriptionVerified) {
 
     Array.prototype.forEach.call(el.progress.children, function (bar, i) {
       bar.className = i < state.index ? "is-done" : i === state.index ? "is-current" : "";
+      if (i === state.index) bar.setAttribute("data-rarity", S.rarityOf(q)); else bar.removeAttribute("data-rarity");
     });
     el.counter.textContent = (state.index + 1) + "/" + state.questions.length;
     el.scoreTotal.textContent = num(state.total);
@@ -273,7 +263,26 @@ function startRound(subscriptionVerified) {
 
     el.category.textContent = (DATA.CATEGORIES && DATA.CATEGORIES[q.category]) || q.category;
     el.region.textContent = ((DATA.REGIONS && DATA.REGIONS[q.region]) || q.region || "США") + " · " + (q.currency || "USD");
+    // Новые объекты (машины, аукционные лоты, недвижимость…) подсказывают, какая именно это цена
+    var pt = q.priceType && PRICE_TYPES[q.priceType];
+    if (pt) el.region.textContent = pt.chip + (q.priceDate ? " · " + String(q.priceDate).slice(0, 4) : "") + " · " + (q.currency || "USD");
+    el.guessLabel.textContent = pt ? pt.question : "Сколько стоит в США?";
+    el.guessHint.textContent = q.price >= 1e6 || (pt && pt.big) ? "Можно так: 2500000, 2.5m или 2,5 млн" : "Можно так: 1500, 1 500 или 1.5k";
     el.testTag.hidden = q.status === "verified";
+    // Метка редкости — только для необычных товаров (COMMON не подписываем)
+    var rar = S.rarityOf(q);
+    el.rarity.hidden = rar === S.RARITY.DEFAULT;
+    el.rarity.textContent = rar === "LEGENDARY" ? "LEGENDARY" : ((S.RARITY.LABELS && S.RARITY.LABELS[rar]) || rar);
+    el.rarity.setAttribute("data-rarity", rar);
+    // Оформление карточки по редкости (рамка, свечение, блик) — только CSS, очки не меняются
+    el.body.setAttribute("data-rarity", rar);
+    // LEGENDARY-вопрос с баннером: тематические цвета рамки и полоска со сценой этого баннера.
+    // Берётся только существующая привязка вопрос → баннер; о цене ничего не говорит.
+    var legend = rar === "LEGENDARY" && window.FV_REWARDS ? window.FV_REWARDS.bannerForQuestion(q.id) : null;
+    if (legend) el.body.setAttribute("data-legend", legend); else el.body.removeAttribute("data-legend");
+    el.legendStrip.innerHTML = "";
+    el.legendStrip.hidden = !legend;
+    if (legend) { var scene = window.FV_REWARDS.bannerEl(legend); if (scene) el.legendStrip.appendChild(scene); }
     el.brand.textContent = q.brand || "";
     el.title.textContent = q.model || q.title;
     el.subtitle.textContent = q.subtitle || "";
@@ -411,48 +420,24 @@ function startRound(subscriptionVerified) {
   }
 
   // ───── Итоги ─────
- 
-
-function finishRound() {
-  state.phase = "finishing";
-  el.next.disabled = true;
-
-  function attemptFinish() {
+  function finishRound() {
+    state.phase = "finishing";
+    el.next.disabled = true;
     state.engine.finish().then(function (fin) {
-      var rec = store.addRound(
-        fin.results.map(function (r) {
-          return { points: r.points, accuracy: r.accuracy };
-        })
-      );
-
-      state.phase = "finished";
+      var results = fin.results;
+      // Личная статистика — всегда локально
+      var rec = store.addRound(results.map(function (r) { return { points: r.points, accuracy: r.accuracy }; }));
       renderResults(fin, rec);
+      // Награды присылает только сервер: новые за этот раунд (или те же — при повторе после потерянного ответа)
+      if (fin.server && fin.server.rewards && fin.server.rewards.length) showRewardSheet(fin.server.rewards);
     }).catch(function (err) {
-      console.error("[FACE VALUE] Не удалось завершить раунд:", err);
-
-      state.phase = "finish-error";
-
-      askConfirm(
-        "Не удалось сохранить результат",
-        (err && err.message ? err.message : "Сервер не ответил.") +
-          "\n\nРезультат пока не подтверждён. Повтори отправку, чтобы попытаться сохранить его в рейтинге.",
-        "Повторить",
-        function (retry) {
-          if (retry) {
-            state.phase = "finishing";
-            attemptFinish();
-          } else {
-            show("menu");
-          }
-        }
-      );
-    }).then(function () {
-      el.next.disabled = false;
-    });
+      // Если сервер не принял результат, всё равно показываем локальные итоги
+      var results = state.results.map(function (x) { return x.result; });
+      var total = S.roundTotal(results.map(function (r) { return r.points; }), ROUND_SIZE);
+      var rec = store.addRound(results.map(function (r) { return { points: r.points, accuracy: r.accuracy }; }));
+      renderResults({ total: total, results: results, ranked: false, error: err }, rec);
+    }).then(function () { el.next.disabled = false; });
   }
-
-  attemptFinish();
-}
 
   function renderResults(fin, rec) {
     state.phase = "results";
@@ -477,7 +462,10 @@ function finishRound() {
         : "Раунд засчитан. В рейтинге остаётся твой лучший результат: " + num(fin.server.best) + ".";
     } else if (fin.error) {
       el.finalSync.hidden = false;
-      el.finalSync.textContent = "Сервер не принял результат, он сохранён только на этом устройстве.";
+      // uncertain: ответа нет (сеть или сбой сервера) — запись могла пройти, утверждать «не сохранён» нельзя
+      el.finalSync.textContent = fin.error.uncertain
+        ? "Сервер не ответил. Результат мог быть засчитан — проверь рейтинг позже."
+        : "Сервер не принял результат, он сохранён только на этом устройстве.";
     }
 
     el.breakdown.innerHTML = "";
@@ -486,6 +474,14 @@ function finishRound() {
       var li = document.createElement("li");
       li.style.animationDelay = (0.06 * i + 0.08) + "s";
       var t = document.createElement("span"); t.className = "bd-title"; t.textContent = q.title;
+      var qr = S.rarityOf(q);
+      if (qr !== S.RARITY.DEFAULT) {
+        li.setAttribute("data-rarity", qr);
+        var badge = document.createElement("span"); badge.className = "bd-rarity";
+        badge.setAttribute("data-rarity", qr);
+        badge.textContent = (S.RARITY.LABELS && S.RARITY.LABELS[qr]) || qr;
+        t.appendChild(document.createTextNode(" ")); t.appendChild(badge);
+      }
       var p = document.createElement("span"); p.className = "bd-points" + (S.isGoodAnswer(r.points) ? " is-good" : ""); p.textContent = "+" + num(r.points);
       var m = document.createElement("span"); m.className = "bd-meta";
       m.textContent = "Цена " + money(r.price) + " · твой ответ " + money(r.guess);
@@ -536,6 +532,8 @@ function finishRound() {
         var nm = document.createElement("span"); nm.className = "lb-name"; nm.textContent = row.name || "Игрок";
         var sc = document.createElement("span"); sc.className = "lb-score"; sc.textContent = num(row.best);
         li.appendChild(pos); li.appendChild(nm); li.appendChild(sc);
+        // Косметика (префикс EPIC, баннер LEGENDARY) — только если сервер прислал её для этого игрока
+        if (row.cosmetics && window.FV_REWARDS) window.FV_REWARDS.decorateRow(li, nm, row.cosmetics);
         list.appendChild(li);
       });
       $("lb-empty").hidden = (data.top || []).length > 0;
@@ -554,41 +552,208 @@ function finishRound() {
     });
   }
 
+  // ───── Новая награда ─────
+  var RW = window.FV_REWARDS_CONFIG || { REWARDS: {} };
+  var TIER_LABEL = { EPIC: "EPIC", LEGENDARY: "LEGENDARY" };
+  function rewardTag(def) {
+    var t = document.createElement("span");
+    t.className = "rw-tier";
+    t.setAttribute("data-tier", def.tier);
+    t.textContent = TIER_LABEL[def.tier] || def.tier;
+    return t;
+  }
+  function showRewardSheet(ids) {
+    var list = ids.filter(function (id) { return RW.REWARDS[id]; });
+    if (!list.length) return;
+    el.rewardSheetTitle.textContent = list.length > 1 ? "Новые награды" : "Новая награда получена";
+    el.rewardSheetList.innerHTML = "";
+    // Сначала LEGENDARY
+    list.sort(function (a, b) { return (RW.REWARDS[a].tier === "LEGENDARY" ? 0 : 1) - (RW.REWARDS[b].tier === "LEGENDARY" ? 0 : 1); });
+    list.forEach(function (id) {
+      var def = RW.REWARDS[id];
+      var item = document.createElement("div");
+      item.className = "reward-item";
+      item.setAttribute("data-reward", id);
+      var head = document.createElement("div");
+      head.className = "reward-item__head";
+      head.appendChild(rewardTag(def));
+      var name = document.createElement("b");
+      name.textContent = def.label;
+      head.appendChild(name);
+      item.appendChild(head);
+      var pv = window.FV_REWARDS && window.FV_REWARDS.previewEl(id);
+      if (pv) item.appendChild(pv);
+      el.rewardSheetList.appendChild(item);
+    });
+    el.rewardSheet.hidden = false;
+    TG.haptic.result(true);
+  }
+  function closeRewardSheet() {
+    el.rewardSheet.hidden = true;
+    el.rewardSheetList.innerHTML = "";
+  }
+
+  // ───── Профиль: коллекция и выбор оформления ─────
+  var profileState = null;
+  function pfState(name) {
+    ["pf-offline", "pf-loading", "pf-error"].forEach(function (id) { $(id).hidden = id !== name; });
+    $("pf-design").hidden = name !== "ready";
+  }
+  function questionTitle(id) {
+    for (var i = 0; i < DATA.QUESTIONS.length; i++) if (DATA.QUESTIONS[i].id === id) return DATA.QUESTIONS[i].title;
+    return null;
+  }
+  function formatDay(ms) {
+    var d = new Date(ms);
+    return isNaN(d) ? "" : d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+
+  function renderCollection(owned) {
+    var box = $("pf-collection");
+    box.innerHTML = "";
+    var ids = Object.keys(RW.REWARDS).sort(function (a, b) {
+      return (RW.REWARDS[a].tier === "LEGENDARY" ? 0 : 1) - (RW.REWARDS[b].tier === "LEGENDARY" ? 0 : 1);
+    });
+    var count = 0;
+    ids.forEach(function (id) {
+      var def = RW.REWARDS[id];
+      var got = owned[id];
+      if (got) count++;
+      var card = document.createElement("div");
+      card.className = "pf-card" + (got ? " is-owned" : " is-locked");
+      card.setAttribute("data-reward", id);
+      card.setAttribute("data-tier", def.tier);
+      var head = document.createElement("div");
+      head.className = "pf-card__head";
+      head.appendChild(rewardTag(def));
+      var name = document.createElement("b");
+      name.className = "pf-card__name";
+      name.textContent = def.label;
+      head.appendChild(name);
+      card.appendChild(head);
+      var pv = window.FV_REWARDS && window.FV_REWARDS.previewEl(id);
+      if (pv) card.appendChild(pv);
+      var info = document.createElement("p");
+      info.className = "pf-card__info";
+      if (got) {
+        info.textContent = "Получена" + (got.earnedAt ? " " + formatDay(got.earnedAt) : "");
+      } else {
+        // Условие — только то, что точно известно из rewards-config.js: вопрос и порог очков
+        var qt = questionTitle(def.questionId);
+        info.textContent = "Не открыта. Точный ответ на вопрос" + (qt ? " «" + qt + "»" : "") +
+          ": от " + def.minPoints + " из " + S.MAX_POINTS + " очков.";
+      }
+      card.appendChild(info);
+      box.appendChild(card);
+    });
+    $("pf-count").textContent = count + " из " + ids.length;
+  }
+
+  function choiceBtn(kind, id, selected, label, content) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "pf-choice";
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", selected ? "true" : "false");
+    b.setAttribute("data-kind", kind);
+    b.setAttribute("data-id", id || "");
+    if (content) b.appendChild(content);
+    b.setAttribute("aria-label", label);
+    // У префикса подпись уже внутри самого префикса — второй раз не повторяем
+    if (!(content && kind === "prefix")) {
+      var t = document.createElement("span");
+      t.className = "pf-choice__label";
+      t.textContent = label;
+      b.appendChild(t);
+    }
+    b.addEventListener("click", function () { chooseCosmetic(kind, id); });
+    return b;
+  }
+
+  function renderDesign() {
+    var p = profileState;
+    var owned = {};
+    p.rewards.forEach(function (r) { owned[r.id] = r; });
+    renderCollection(owned);
+    // Превью строки рейтинга с текущим оформлением (то же, что видят другие игроки)
+    var list = $("pf-preview");
+    list.innerHTML = "";
+    var li = document.createElement("li");
+    li.className = "is-me";
+    var pos = document.createElement("span"); pos.className = "lb-pos"; pos.textContent = "·";
+    var nm = document.createElement("span"); nm.className = "lb-name"; nm.textContent = TG.firstName() || "Ты";
+    var sc = document.createElement("span"); sc.className = "lb-score"; sc.textContent = "";
+    li.appendChild(pos); li.appendChild(nm); li.appendChild(sc);
+    if (window.FV_REWARDS && (p.selected.prefix || p.selected.banner)) window.FV_REWARDS.decorateRow(li, nm, p.selected);
+    list.appendChild(li);
+
+    var prefixes = p.rewards.filter(function (r) { return RW.REWARDS[r.id] && RW.REWARDS[r.id].kind === "prefix"; });
+    var banners = p.rewards.filter(function (r) { return RW.REWARDS[r.id] && RW.REWARDS[r.id].kind === "banner"; });
+    $("pf-empty").hidden = p.rewards.length > 0;
+    $("pf-pickers").hidden = p.rewards.length === 0;
+    var pc = $("pf-prefix-choices"), bc = $("pf-banner-choices");
+    pc.innerHTML = ""; bc.innerHTML = "";
+    pc.appendChild(choiceBtn("prefix", null, !p.selected.prefix, "Без префикса"));
+    prefixes.forEach(function (r) {
+      pc.appendChild(choiceBtn("prefix", r.id, p.selected.prefix === r.id, RW.REWARDS[r.id].label, window.FV_REWARDS.prefixEl(r.id)));
+    });
+    bc.appendChild(choiceBtn("banner", null, !p.selected.banner, "Без баннера"));
+    banners.forEach(function (r) {
+      bc.appendChild(choiceBtn("banner", r.id, p.selected.banner === r.id, RW.REWARDS[r.id].label, window.FV_REWARDS.previewEl(r.id)));
+    });
+    if (!prefixes.length) pc.appendChild(Object.assign(document.createElement("p"), { className: "pf-hint", textContent: "EPIC-префиксов пока нет." }));
+    if (!banners.length) bc.appendChild(Object.assign(document.createElement("p"), { className: "pf-hint", textContent: "LEGENDARY-баннеров пока нет." }));
+  }
+
+  var saving = false;
+  function chooseCosmetic(kind, id) {
+    if (!profileState || saving) return;
+    var next = { prefix: profileState.selected.prefix, banner: profileState.selected.banner };
+    next[kind] = id;
+    saving = true;
+    var status = $("pf-status");
+    status.textContent = "Сохраняю…";
+    document.querySelectorAll(".pf-choice").forEach(function (b) { b.disabled = true; });
+    // Сервер проверит, что награда действительно получена; в ответ — актуальный профиль
+    API.setCosmetics(next.prefix, next.banner).then(function (p) {
+      profileState = p;
+      renderDesign();
+      status.textContent = "Сохранено. Так тебя видят в рейтинге.";
+    }).catch(function (err) {
+      status.textContent = (err && err.message) || "Не удалось сохранить. Попробуй ещё раз.";
+      document.querySelectorAll(".pf-choice").forEach(function (b) { b.disabled = false; });
+    }).then(function () { saving = false; });
+  }
+
+  function renderProfile() {
+    $("pf-status").textContent = "";
+    if (!API.enabled()) {
+      profileState = null;
+      pfState("pf-offline");
+      renderCollection({});
+      return;
+    }
+    pfState("pf-loading");
+    renderCollection({});
+    API.profile().then(function (p) {
+      profileState = p;
+      pfState("ready");
+      renderDesign();
+    }).catch(function (err) {
+      $("pf-error-text").textContent = (err && err.message) || "Проверь интернет и попробуй ещё раз.";
+      pfState("pf-error");
+    });
+  }
+
   // ───── Обработчики ─────
   function bind() {
     $("btn-play").addEventListener("click", startRound);
-    
-$("btn-subscribe").addEventListener("click", function () {
-  TG.openLink("https://t.me/facevalue_updates");
-});
-
-$("btn-check-subscription").addEventListener("click", function () {
-  var btn = $("btn-check-subscription");
-
-  btn.disabled = true;
-  btn.textContent = "Проверяем…";
-
-  API.subscription().then(function (data) {
-    if (data.subscribed) {
-      el.subscriptionSheet.hidden = true;
-      startRound(true);
-    } else {
-      el.subscriptionText.textContent =
-        "Подписка пока не найдена. Подпишись на канал и попробуй ещё раз.";
-    }
-  }).catch(function (err) {
-    el.subscriptionText.textContent =
-      "Не удалось проверить подписку. " +
-      (err.message || "Проверь интернет и повтори попытку.");
-  }).then(function () {
-    btn.disabled = false;
-    btn.textContent = "Проверить подписку";
-  });
-});
-
     $("btn-again").addEventListener("click", startRound);
     $("btn-quit").addEventListener("click", confirmQuit);
     $("btn-lb-retry").addEventListener("click", renderLeaderboard);
+    $("btn-pf-retry").addEventListener("click", renderProfile);
+    $("btn-reward-profile").addEventListener("click", function () { closeRewardSheet(); go("profile"); });
+    document.querySelectorAll("[data-reward-close]").forEach(function (b) { b.addEventListener("click", closeRewardSheet); });
     $("btn-reset-stats").addEventListener("click", function () {
       askConfirm("Сбросить статистику?", "Рекорд и все показатели на этом устройстве будут удалены.", "Сбросить", function (ok) {
         if (!ok) return;
@@ -600,20 +765,10 @@ $("btn-check-subscription").addEventListener("click", function () {
     document.querySelectorAll("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () { go(b.getAttribute("data-go")); });
     });
-    
-    document.querySelectorAll("[data-action=play]").forEach(function (b) { b.addEventListener("click", startRound); }); 
-document.querySelectorAll("[data-sheet]").forEach(function (b) {
-  b.addEventListener("click", function () {
-    closeSheet(b.getAttribute("data-sheet") === "ok");
-  });
-});
-
-document.querySelectorAll("[data-subscription='close']").forEach(function (b) {
-  b.addEventListener("click", function () {
-    el.subscriptionSheet.hidden = true;
-  });
-});
-
+    document.querySelectorAll("[data-action=play]").forEach(function (b) { b.addEventListener("click", startRound); });
+    document.querySelectorAll("[data-sheet]").forEach(function (b) {
+      b.addEventListener("click", function () { closeSheet(b.getAttribute("data-sheet") === "ok"); });
+    });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !el.sheet.hidden) closeSheet(false);
     });

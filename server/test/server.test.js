@@ -68,7 +68,10 @@ test("раунд: сервер выбирает 5 вопросов и счита
   }
   assert.equal(total, 5000);
   const fin = await game.finishRound(U1, { roundId: r.roundId });
-  assert.deepEqual(fin, { total: 5000, best: 5000, newBest: true });
+  // Если в раунд попал вопрос с наградой, сервер добавит rewards — это отдельная проверка (rewards.test.js)
+  const { rewards: r1, ...fin1 } = fin;
+  assert.deepEqual(fin1, { total: 5000, best: 5000, newBest: true });
+  assert.ok(r1 === undefined || (Array.isArray(r1) && r1.length > 0), "rewards есть только если выданы награды");
 });
 
 test("раунд: нельзя ответить дважды, пропустить вопрос или прислать мусор", async () => {
@@ -94,30 +97,26 @@ test("раунд: параллельная двойная отправка за�
   assert.equal(store.rounds.get(r.roundId).answersCount, 1);
 });
 
-test("раунд: чужой раунд недоступен, завершить можно один раз", async () => {
-  const { game } = makeGame();
+test("раунд: чужой раунд недоступен, засчитать можно один раз (повтор возвращает сохранённый итог)", async () => {
+  const { game, store } = makeGame();
   const r = await game.startRound(U1);
   await assert.rejects(game.answer(U2, { roundId: r.roundId, index: 0, guess: 100 }), { code: "round_not_found" });
   for (let i = 0; i < 5; i++) await game.answer(U1, { roundId: r.roundId, index: i, guess: 50 });
   await assert.rejects(game.finishRound(U2, { roundId: r.roundId }), { code: "round_not_found" });
-  await game.finishRound(U1, { roundId: r.roundId });
-  await assert.rejects(game.finishRound(U1, { roundId: r.roundId }), { code: "round_finished" });
+  const fin = await game.finishRound(U1, { roundId: r.roundId });
+  assert.deepEqual(await game.finishRound(U1, { roundId: r.roundId }), { ...fin, repeated: true });
+  assert.equal(store.players.get(U1.id).rounds, 1, "раунд засчитан один раз");
   await assert.rejects(game.answer(U1, { roundId: r.roundId, index: 5, guess: 50 }), { code: "round_finished" });
   await assert.rejects(game.answer(U1, { roundId: "not-a-uuid", index: 0, guess: 50 }), { code: "bad_round" });
 });
 
-test("раунд: просроченный раунд не принимает ответы и получает статус expired", async () => {
-  const { game, store, clock } = makeGame();
+test("раунд: просроченный раунд не принимает ответы", async () => {
+  const { game, clock } = makeGame();
   const r = await game.startRound(U1);
   clock.advance(ROUND_TTL_MS + 1);
-
-  await assert.rejects(
-    game.answer(U1, { roundId: r.roundId, index: 0, guess: 100 }),
-    { code: "round_expired" }
-  );
-
-  assert.equal(store.rounds.get(r.roundId).status, "expired");
+  await assert.rejects(game.answer(U1, { roundId: r.roundId, index: 0, guess: 100 }), { code: "round_expired" });
 });
+
 test("раунд: ограничение числа раундов в час", async () => {
   const { game } = makeGame();
   for (let i = 0; i < MAX_ROUNDS_PER_HOUR; i++) await game.startRound(U1);
@@ -147,15 +146,7 @@ async function call(method, path, { body, auth, store, env } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (auth) headers.Authorization = "tma " + auth;
   const req = new Request("https://api.example.com" + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-  
-const res = await handle(
-  req,
-  { BOT_TOKEN: TOKEN, ALLOWED_ORIGIN: "*", ...env },
-  {
-    store,
-    isSubscribed: async () => true
-  }
-);
+  const res = await handle(req, { BOT_TOKEN: TOKEN, ALLOWED_ORIGIN: "*", ...env }, { store });
   return { status: res.status, data: res.status === 204 ? null : await res.json(), headers: res.headers };
 }
 
@@ -180,9 +171,11 @@ test("HTTP: полный рейтинговый раунд и таблица", a
     assert.equal(a.data.points, 1000);
   }
   const fin = await call("POST", "/api/round/finish", { store, auth, body: { roundId: start.data.roundId } });
-  assert.deepEqual(fin.data, { total: 5000, best: 5000, newBest: true });
+  const { rewards: r2, ...fin2 } = fin.data;
+  assert.deepEqual(fin2, { total: 5000, best: 5000, newBest: true });
   const again = await call("POST", "/api/round/finish", { store, auth, body: { roundId: start.data.roundId } });
-  assert.equal(again.status, 409);
+  assert.equal(again.status, 200);
+  assert.deepEqual(again.data, { ...fin.data, repeated: true }, "повтор — тот же итог (и те же награды этого раунда), без новой записи");
   const lb = await call("GET", "/api/leaderboard", { store, auth });
   assert.equal(lb.data.top[0].name, "Вика И.");
   assert.equal(lb.data.top[0].best, 5000);

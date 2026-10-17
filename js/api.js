@@ -49,11 +49,13 @@
   root.FV_API = {
     configured: configured,
     enabled: enabled,
-    subscription: function () { return request("GET", "/api/subscription"); },
     startRound: function () { return request("POST", "/api/round/start"); },
     answer: function (roundId, index, guess) { return request("POST", "/api/round/answer", { roundId: roundId, index: index, guess: guess }); },
     finishRound: function (roundId) { return request("POST", "/api/round/finish", { roundId: roundId }); },
     leaderboard: function () { return request("GET", "/api/leaderboard"); },
+    // Профиль: награды игрока (решает сервер) и выбор оформления (только из полученных)
+    profile: function () { return request("GET", "/api/profile"); },
+    setCosmetics: function (prefix, banner) { return request("POST", "/api/profile/cosmetics", { prefix: prefix, banner: banner }); },
     ApiError: ApiError
   };
 })(window);

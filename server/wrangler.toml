@@ -1,19 +1,17 @@
-name = "aged-sky-08bdface-value-api"
+# FACE VALUE — настройки Cloudflare Worker.
+# Секреты сюда НЕ пишутся. BOT_TOKEN и WEBHOOK_SECRET задаются только как секреты Cloudflare:
+#   в веб-панели (Settings → Variables and Secrets → тип Secret) или командой npx wrangler secret put …
+name = "face-value-api"
 main = "src/index.js"
-compatibility_date = "2026-10-12"
-preview_urls = false
+compatibility_date = "2025-09-01"
 
 [vars]
-ALLOWED_ORIGIN = "*"
-INIT_DATA_MAX_AGE = "86400"
-REQUIRED_CHANNEL_ID = "@facevalue_updates"
+# С какого сайта игре разрешено обращаться к серверу (только домен, без пути).
+ALLOWED_ORIGIN = "https://creator83754504.github.io"
+# Адрес игры — его открывает кнопка «Играть» в боте
 WEBAPP_URL = "https://creator83754504.github.io/face-value/"
-
-[observability]
-enabled = true
-
-[observability.logs]
-enabled = true
+# Сколько секунд initData считается свежей
+INIT_DATA_MAX_AGE = "86400"
 
 [[d1_databases]]
 binding = "DB"

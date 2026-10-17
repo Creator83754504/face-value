@@ -10,6 +10,7 @@
   <title>FACE VALUE</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0a0b'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='14' text-anchor='middle' fill='%23E6C07B'%3EFV%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/rewards.css">
   <!-- Официальный скрипт Telegram Mini Apps. В обычном браузере он ничего не делает. -->
   <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
 </head>
@@ -33,6 +34,11 @@
           <button class="menu-item" type="button" data-go="leaderboard">
             <span class="menu-item__title">Рейтинг</span>
             <span class="menu-item__hint" id="menu-leaderboard-hint">Скоро</span>
+            <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button class="menu-item" type="button" data-go="profile">
+            <span class="menu-item__title">Профиль</span>
+            <span class="menu-item__hint" id="menu-profile-hint">Награды</span>
             <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
           </button>
           <button class="menu-item" type="button" data-go="stats">
@@ -72,10 +78,13 @@
           </div>
           <div class="photo__skeleton" id="photo-skeleton"></div>
         </figure>
+        <!-- LEGENDARY-вопрос: узкая полоска с тематической сценой его баннера (без текста и без цены) -->
+        <div class="legend-strip" id="legend-strip" hidden aria-hidden="true"></div>
 
         <div class="product-meta">
           <span class="chip" id="product-category"></span>
           <span class="chip chip--ghost" id="product-region">США · USD</span>
+          <span class="chip chip--rarity" id="product-rarity" hidden></span>
           <span class="chip chip--warn" id="product-test" hidden>Тестовые данные</span>
         </div>
         <p class="product-brand" id="product-brand"></p>
@@ -83,7 +92,7 @@
         <p class="product-subtitle" id="product-subtitle"></p>
 
         <form class="guess" id="guess-form" novalidate autocomplete="off">
-          <label class="guess-label" for="guess-input">Сколько стоит в США?</label>
+          <label class="guess-label" id="guess-label" for="guess-input">Сколько стоит в США?</label>
           <div class="guess-field" id="guess-field">
             <span class="guess-currency" aria-hidden="true">$</span>
             <input class="guess-input" id="guess-input" name="guess" type="text"
@@ -209,6 +218,43 @@
       </div>
     </section>
 
+    <!-- ═════ Профиль ═════ -->
+    <section class="screen screen--profile" id="screen-profile" aria-label="Профиль">
+      <header class="page-head">
+        <button class="icon-btn" type="button" data-go="menu" aria-label="Назад">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <h2>Профиль</h2>
+      </header>
+
+      <div class="pf-note" id="pf-offline" hidden>
+        <p>Награды выдаёт сервер за точные ответы в рейтинговых раундах внутри Telegram. Здесь сейчас локальный режим: коллекция видна, но получить и выбрать награды нельзя.</p>
+      </div>
+      <div class="pf-note" id="pf-loading" hidden><div class="spinner" aria-label="Загрузка"></div></div>
+      <div class="pf-note" id="pf-error" hidden>
+        <p id="pf-error-text">Не удалось загрузить профиль.</p>
+        <button class="btn btn--secondary" id="btn-pf-retry" type="button">Повторить</button>
+      </div>
+
+      <div id="pf-design" hidden>
+        <h3 class="pf-h">Оформление в рейтинге</h3>
+        <ol class="lb-table pf-preview" id="pf-preview" aria-label="Так твоя строка выглядит в рейтинге"></ol>
+        <div class="pf-empty" id="pf-empty" hidden>
+          <p>Наград пока нет. Они выдаются за очень точный ответ на редкий вопрос в рейтинговом раунде: EPIC — от 900 из 1000 очков, LEGENDARY — от 950.</p>
+        </div>
+        <div id="pf-pickers">
+          <p class="pf-label">Префикс у ника</p>
+          <div class="pf-choices" id="pf-prefix-choices" role="radiogroup" aria-label="Префикс"></div>
+          <p class="pf-label">Фон строки</p>
+          <div class="pf-choices" id="pf-banner-choices" role="radiogroup" aria-label="Баннер"></div>
+          <p class="pf-status" id="pf-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <h3 class="pf-h">Мои награды <span class="pf-count" id="pf-count"></span></h3>
+      <div class="pf-grid" id="pf-collection"></div>
+    </section>
+
     <!-- ═════ Как играть ═════ -->
     <section class="screen screen--howto" id="screen-howto" aria-label="Как играть">
       <header class="page-head">
@@ -242,6 +288,18 @@
   </main>
 
   <!-- Небольшое окно подтверждения (вне Telegram) -->
+  <!-- Новая награда (показывается после завершения раунда, если сервер выдал награду) -->
+  <div class="sheet reward-sheet" id="reward-sheet" hidden>
+    <div class="sheet__backdrop" data-reward-close></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="reward-sheet-title">
+      <p class="reward-sheet__eyebrow">Новая награда</p>
+      <h3 id="reward-sheet-title">Ты получил награду</h3>
+      <div class="reward-sheet__list" id="reward-sheet-list"></div>
+      <button class="btn btn--primary" type="button" id="btn-reward-profile">В профиль</button>
+      <button class="btn btn--secondary" type="button" data-reward-close>Закрыть</button>
+    </div>
+  </div>
+
   <div class="sheet" id="sheet" hidden>
     <div class="sheet__backdrop" data-sheet="cancel"></div>
     <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
@@ -251,35 +309,18 @@
       <button class="btn btn--secondary" type="button" data-sheet="cancel">Отмена</button>
     </div>
   </div>
-    <!-- Проверка подписки FACE VALUE -->
-  <div class="sheet" id="subscription-sheet" hidden>
-    <div class="sheet__backdrop" data-subscription="close"></div>
-    <div class="sheet__panel" role="dialog" aria-modal="true"
-         aria-labelledby="subscription-title">
-      <h3 id="subscription-title">Подписка на канал</h3>
-      <p id="subscription-text">
-        Чтобы играть и участвовать в рейтинге, подпишись на канал FACE VALUE.
-      </p>
-      <button class="btn btn--primary" id="btn-subscribe" type="button">
-        Подписаться
-      </button>
-      <button class="btn btn--secondary" id="btn-check-subscription" type="button">
-        Проверить подписку
-      </button>
-      <button class="btn btn--secondary" type="button" data-subscription="close">
-        Назад
-      </button>
-    </div>
-  </div>
 
   <noscript><p style="color:#fff;padding:24px">Для игры нужно включить JavaScript.</p></noscript>
 
   <script src="js/config.js"></script>
   <script src="js/data/questions.js"></script>
   <script src="assets/products/manifest.js"></script>
+  <script src="js/rarity-config.js"></script>
   <script src="js/scoring.js"></script>
   <script src="js/stats.js"></script>
   <script src="js/telegram.js"></script>
+  <script src="js/rewards-config.js"></script>
+  <script src="js/rewards.js"></script>
   <script src="js/api.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/app.js"></script>
