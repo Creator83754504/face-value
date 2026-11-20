@@ -81,6 +81,7 @@
         stepB.textContent = pB.stop == null ? "Кликните, чтобы поставить Stop Loss." : pB.target == null ? "Теперь кликните, чтобы поставить Take Profit." : "Стоп и цель указаны. Следующий клик изменит цель.";
       }
       var stepB = h("p", { class: "small" });
+      B.chart.update({ extraRange: [supB - atrB * 5, entryB + atrB * 10] });
       drawB();
       var fixBtn = h("button", { class: "btn btn--primary btn--lg", onclick: function () {
         if (!trendSel.value || lv.support == null || lv.resistance == null || pB.stop == null || pB.target == null) { CA.dom.toast("Выполните все пункты на обоих графиках", "error"); return; }

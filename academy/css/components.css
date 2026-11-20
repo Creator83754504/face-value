@@ -259,3 +259,11 @@ a.lesson-row:hover { border-color: var(--line-strong); background: var(--surface
 .pos__actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 6px; align-items: center; }
 @media (max-width: 420px) { .pos__actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 details > summary::-webkit-details-marker { display: none; }
+@media (max-width: 560px) {
+  .stats--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats--compact .stat__value { font-size: 15px; }
+  .stat__value { font-size: 18px; }
+  .sim-price b { font-size: 18px; }
+  .card { padding: 14px; }
+  .task { padding: 14px; }
+}

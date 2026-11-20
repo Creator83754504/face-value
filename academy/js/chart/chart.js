@@ -101,6 +101,7 @@
       }
       (o.levels || []).forEach(function (l) { if (l.fit !== false) { lo = Math.min(lo, l.price); hi = Math.max(hi, l.price); } });
       (o.markers || []).forEach(function (m) { if (m.price != null && m.i >= view.from && m.i <= view.to) { lo = Math.min(lo, m.price); hi = Math.max(hi, m.price); } });
+      if (o.extraRange) { lo = Math.min(lo, o.extraRange[0]); hi = Math.max(hi, o.extraRange[1]); }
       if (!isFinite(lo)) { lo = 0; hi = 1; }
       var pad = (hi - lo) * 0.08 || hi * 0.01;
       return { lo: lo - pad, hi: hi + pad };

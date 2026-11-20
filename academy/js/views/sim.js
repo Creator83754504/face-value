@@ -253,7 +253,7 @@
       });
       acc.orders.forEach(function (o) { if (o.asset === S.asset) levels.push({ price: o.limit, color: "#3d8bff", label: "Лимит", fit: false }); });
       var patch = { candles: c, limit: S.cursor + 1, overlays: ov.overlays, bands: ov.bands, panes: panes, markers: markers, levels: levels, title: S.asset + " · 1h", height: 380 + (panes.length - 1) * 84, refit: refit };
-      if (!chart) chart = CA.Chart(chartBox, Object.assign({ visible: 120, dataLabel: "Синтетические данные · вымышленный актив" }, patch));
+      if (!chart) chart = CA.Chart(chartBox, Object.assign({ visible: window.innerWidth < 600 ? 60 : 120, dataLabel: "Синтетические данные · вымышленный актив" }, patch));
       else chart.update(patch);
       Array.from(indSeg.children).forEach(function (b) { b.classList.toggle("btn--primary", !!S.ind[b.dataset.k]); });
     }

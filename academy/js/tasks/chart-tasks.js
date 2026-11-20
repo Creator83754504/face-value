@@ -303,6 +303,7 @@
         onClick: function (pt) { if (stage >= 3) return; pts[stages[stage]] = pt.price; stage++; draw(); }
       });
       d = chart.data; cut = d.meta.cut; support = d.meta.support; atr = lastAtr(d.candles, cut);
+      chart.chart.update({ extraRange: [support - atr * 5, d.candles[cut - 1].c + atr * 10] });
       draw();
     }
     function draw() {

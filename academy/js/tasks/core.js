@@ -65,7 +65,7 @@
       candles: d.candles, height: spec.height || 300, panes: spec.panes || ["volume"], overlays: ov.overlays, bands: ov.bands,
       levels: spec.levels === "meta" ? metaLevels(d.meta) : (spec.levels || []),
       markers: spec.pivots ? pivotMarkers(d.meta, d.candles) : [], tf: spec.tf || 60,
-      title: spec.title || "SYN/USDT", dataLabel: CA.market.DATA_LABEL, pan: spec.pan !== false
+      title: spec.title || "SYN/USDT", dataLabel: CA.market.DATA_LABEL, pan: spec.pan !== false, visible: spec.visible
     }, extra || {});
     if (spec.cut === "meta" && d.meta.cut) opts.limit = d.meta.cut;
     if (spec.cut === "breakout" && d.meta.breakoutIndex) opts.limit = d.meta.breakoutIndex - 2;
