@@ -10,3 +10,5 @@ video/*/build/prev/
 video/*/build/chk/
 video/*/build/*.wav
 video/*/build/*.jpg
+video/*/build/prev2/
+video/*/build/*.log

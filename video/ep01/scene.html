@@ -101,7 +101,7 @@ function tolik(cx,cy,s,t,{mouth=0,wide=0,blink=false}={}){
   // ears
   [-1,1].forEach(k=>{ctx.beginPath();ctx.ellipse(k*168,10,34,46,0,0,7);ctx.fillStyle='#e9b48a';ctx.fill();ctx.stroke()});
   // head
-  ctx.beginPath();ctx.ellipse(0,0,165,180,0,0,7);ctx.fillStyle='#f0bd92';ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(0,0,165,180,0,0,7);ctx.fillStyle=(arguments[4]&&arguments[4].skin)||'#f0bd92';ctx.fill();ctx.stroke();
   // hair tuft + antenna curl
   ctx.fillStyle='#1d1328';ctx.beginPath();ctx.moveTo(-130,-110);
   [[-110,-200],[-70,-140],[-40,-215],[0,-150],[40,-220],[70,-145],[115,-195],[135,-105]].forEach(([x,y])=>ctx.lineTo(x,y));ctx.quadraticCurveTo(0,-160,-130,-110);ctx.fill();
@@ -259,4 +259,5 @@ function render(f){const t=f/FPS;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0
   subs(t,t>=7.93&&t<10.2?1660:1640);
 }
 window.render=render;window.ready=document.fonts.load('80px Unb').then(()=>document.fonts.load('80px Mont'));
-</script></body></html>
+</script>
+<script src="scenes2.js"></script></body></html>
