@@ -5,3 +5,8 @@ node_modules/
 /dist/
 assets/products/report.json
 dev-data/
+video/*/build/frames/
+video/*/build/prev/
+video/*/build/chk/
+video/*/build/*.wav
+video/*/build/*.jpg
