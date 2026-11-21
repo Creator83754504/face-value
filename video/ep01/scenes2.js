@@ -105,7 +105,7 @@ function p12(t){const tj=wp('прыгает',12),ty=wp('выдёргивает',
   if(t>ty&&t<ty+.6){const R=rng(Math.floor(t*30));for(let i=0;i<14;i++){ctx.beginPath();ctx.moveTo(W/2,800);ctx.lineTo(W/2+(R()-.5)*500,800+(R()-.5)*500);ctx.strokeStyle='#ffe066';ctx.lineWidth=6;ctx.stroke()}}
   let vx=W/2+330,vy=1250,vs=.9;if(t>tj){const k=clamp((t-tj)/.6);vx=lerp(W/2+330,W/2,k);vy=lerp(1250,620+pull*520,k)-Math.sin(k*Math.PI)*400}
   valera(vx,vy,vs,t,{ext:true,bulb:t>wp('понимает',12)&&t<tj?outBack((t-wp('понимает',12))/.3):0});
-  if(t>wp('надо',12)&&t<ty)plaque([{t:'НАДО СРОЧНО',c:'#fff'},{t:'СПАСАТЬ ДОЛБО*БА!',c:'#ffd23f'}],W/2,230,wp('надо',12),t,{border:'#ffd23f',size:58,rot:-2});
+  if(t>wp('надо',12)&&t<ty)plaque([{t:'НАДО СРОЧНО',c:'#fff'},{t:'СПАСАТЬ ДОЛБО*БА!',c:'#ffd23f'}],W/2,230,wp('надо',12),t,{border:'#ffd23f',size:46,rot:-2});
   if(t>ty)plaque([{t:'ВЫДЕРНУТЬ НАХ*Й!',c:'#ff9ad5'}],W/2,230,ty,t,{border:'#ff5fae',size:66,rot:3})}
 function p13(t){const tf=wp('пеной',13),ts=wp('чихает',13),tp=wp('вышибает',13);
   ctx.save();applyCam(camFor(t,1.02));lab(t);ctx.restore();ctx.fillStyle='rgba(20,10,40,.35)';ctx.fillRect(0,0,W,H);
